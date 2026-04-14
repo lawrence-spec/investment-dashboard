@@ -791,17 +791,24 @@ async function startPdfGeneration() {
 
     setPdfStep('pdf-step-layout', 'done');
 
-    // Step 3: Render to actual PDF via html2pdf.js
+    // Step 3: Pre-render in hidden iframe so styles/fonts load correctly
     setPdfStep('pdf-step-render', 'active');
 
-    // Pre-render the HTML into a hidden container for html2pdf
-    const pdfContainer = document.createElement('div');
-    pdfContainer.id = 'pdf-render-container';
-    pdfContainer.style.cssText = 'position:absolute;left:-9999px;top:0;width:1000px;';
-    pdfContainer.innerHTML = pdfHtmlData;
-    document.body.appendChild(pdfContainer);
+    // Create a hidden iframe — html2pdf needs a fully rendered document, not innerHTML
+    const pdfIframe = document.createElement('iframe');
+    pdfIframe.id = 'pdf-render-iframe';
+    pdfIframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:1000px;height:1400px;border:none;';
+    document.body.appendChild(pdfIframe);
+    pdfIframe.contentDocument.open();
+    pdfIframe.contentDocument.write(pdfHtmlData);
+    pdfIframe.contentDocument.close();
 
-    // Small delay to let images/fonts load
+    // Wait for iframe content + fonts + images to fully load
+    await new Promise(resolve => {
+      pdfIframe.onload = resolve;
+      setTimeout(resolve, 3000); // fallback timeout
+    });
+    // Extra buffer for Google Fonts
     await new Promise(r => setTimeout(r, 1500));
 
     setPdfStep('pdf-step-render', 'done');
@@ -830,46 +837,62 @@ function previewPdf() {
 async function downloadPdf() {
   if (!pdfHtmlData) return;
 
-  // Use the pre-rendered container if it exists, otherwise create one
-  let container = document.getElementById('pdf-render-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'pdf-render-container';
-    container.style.cssText = 'position:absolute;left:-9999px;top:0;width:1000px;';
-    container.innerHTML = pdfHtmlData;
-    document.body.appendChild(container);
-    await new Promise(r => setTimeout(r, 1000));
+  const btn = document.querySelector('.btn-pdf-download');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating PDF...'; }
+
+  // Get the rendered iframe body — it has all styles applied correctly
+  let pdfIframe = document.getElementById('pdf-render-iframe');
+  if (!pdfIframe) {
+    // Recreate if cleaned up
+    pdfIframe = document.createElement('iframe');
+    pdfIframe.id = 'pdf-render-iframe';
+    pdfIframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:1000px;height:1400px;border:none;';
+    document.body.appendChild(pdfIframe);
+    pdfIframe.contentDocument.open();
+    pdfIframe.contentDocument.write(pdfHtmlData);
+    pdfIframe.contentDocument.close();
+    await new Promise(resolve => {
+      pdfIframe.onload = resolve;
+      setTimeout(resolve, 3000);
+    });
+    await new Promise(r => setTimeout(r, 1500));
   }
 
+  const body = pdfIframe.contentDocument.body;
+
   const opt = {
-    margin:       [0.2, 0.2, 0.2, 0.2],
+    margin:       [0.3, 0.3, 0.3, 0.3],
     filename:     'VNO_Investment_OnePager.pdf',
     image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, logging: false },
+    html2canvas:  {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      width: 1000,
+      windowWidth: 1000
+    },
     jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
     pagebreak:    { mode: ['avoid-all'] }
   };
 
   try {
-    await html2pdf().set(opt).from(container).save();
+    await html2pdf().set(opt).from(body).save();
   } catch (e) {
     console.error('PDF download error:', e);
-    // Fallback: download as HTML
-    const blob = new Blob([pdfHtmlData], { type: 'text/html' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'VNO_Investment_OnePager.html';
-    a.click();
+    // Fallback: open print dialog on the preview (browser can Save as PDF)
+    const win = window.open('', '_blank');
+    win.document.write(pdfHtmlData);
+    win.document.close();
+    win.onload = () => win.print();
   }
 
-  // Cleanup
-  if (container) container.remove();
+  if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
 }
 
 function closePdfModal() {
   document.getElementById('pdfModal').classList.remove('active');
-  const container = document.getElementById('pdf-render-container');
-  if (container) container.remove();
+  const iframe = document.getElementById('pdf-render-iframe');
+  if (iframe) iframe.remove();
 }
 
 // ─── DEMO MODE ───
