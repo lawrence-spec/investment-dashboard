@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
 const fetch = require('node-fetch');
@@ -66,6 +67,57 @@ app.post('/api/generate', async (req, res) => {
     // Extract the full_html from variables
     const dashboardHtml = data.variables?.full_html || data.answer || '';
     res.json({ html: dashboardHtml, answer: data.answer });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Generate PDF one-pager
+app.post('/api/generate-pdf', async (req, res) => {
+  try {
+    const { filename } = req.body;
+
+    const response = await fetch(`${PUBLIC_URL}/maistro`, {
+      method: 'POST',
+      headers: {
+        'apikey': API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        agent: '225-PDF-OnePager',
+        params: [{ name: 'excel_file', value: filename }],
+        options: { returnVariables: true }
+      })
+    });
+
+    const data = await response.json();
+    const pdfHtml = data.variables?.pdf_html || '';
+    res.json({ html: pdfHtml, answer: data.answer });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Download a generated file from NeuralSeek
+app.get('/api/download/:filename', async (req, res) => {
+  try {
+    const response = await fetch(`${PUBLIC_URL}/maistro`, {
+      method: 'POST',
+      headers: {
+        'apikey': API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        agent: '225-PDF-OnePager',
+        params: [{ name: 'excel_file', value: req.params.filename }],
+        options: { returnVariables: true }
+      })
+    });
+
+    const data = await response.json();
+    const html = data.variables?.pdf_html || '';
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

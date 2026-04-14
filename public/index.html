@@ -220,7 +220,185 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 /* Dashboard container */
 .dashboard-container {
   display: none;
+  position: relative;
 }
+
+/* PDF floating button */
+.pdf-fab {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 1000;
+  display: none;
+}
+
+.pdf-fab button {
+  background: #C8102E;
+  color: #fff;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Inter', system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(200, 16, 46, 0.35);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pdf-fab button:hover {
+  background: #A00D25;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(200, 16, 46, 0.45);
+}
+
+.pdf-fab button:disabled {
+  background: #94A3B8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.pdf-fab img {
+  height: 18px;
+  filter: brightness(10);
+}
+
+/* PDF modal */
+.pdf-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+
+.pdf-modal-overlay.active {
+  display: flex;
+}
+
+.pdf-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 480px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.pdf-modal h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0C2340;
+  margin-bottom: 4px;
+}
+
+.pdf-modal p {
+  font-size: 13px;
+  color: #64748B;
+  margin-bottom: 24px;
+}
+
+.pdf-modal .pdf-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #F1F5F9;
+  border-top-color: #C8102E;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+.pdf-modal .pdf-steps {
+  text-align: left;
+  margin: 16px 0;
+  font-size: 13px;
+}
+
+.pdf-modal .pdf-step {
+  padding: 8px 0;
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pdf-modal .pdf-step.active { color: #0C2340; font-weight: 500; }
+.pdf-modal .pdf-step.done { color: #16A34A; }
+
+.pdf-modal .pdf-step-dot {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  background: #F1F5F9;
+  color: #94A3B8;
+  flex-shrink: 0;
+}
+
+.pdf-modal .pdf-step.active .pdf-step-dot {
+  background: #FEE2E2;
+  color: #C8102E;
+  animation: pulse-red 1.5s infinite;
+}
+
+.pdf-modal .pdf-step.done .pdf-step-dot {
+  background: #DCFCE7;
+  color: #16A34A;
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200, 16, 46, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(200, 16, 46, 0); }
+}
+
+.pdf-preview-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pdf-preview-actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-pdf-download {
+  background: #C8102E;
+  color: #fff;
+}
+
+.btn-pdf-download:hover { background: #A00D25; }
+
+.btn-pdf-preview {
+  background: #F1F5F9;
+  color: #0C2340;
+}
+
+.btn-pdf-preview:hover { background: #E2E8F0; }
+
+.btn-pdf-close {
+  background: transparent;
+  color: #64748B;
+  border: 1px solid #E2E8F0 !important;
+}
+
+.btn-pdf-close:hover { background: #F8FAFC; }
 
 /* Powered by */
 .powered-by {
@@ -291,6 +469,44 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 
 <!-- DASHBOARD OUTPUT -->
 <div class="dashboard-container" id="dashboardContainer"></div>
+
+<!-- PDF FLOATING BUTTON -->
+<div class="pdf-fab" id="pdfFab">
+  <button onclick="startPdfGeneration()">
+    <img src="https://cdn-vno.reol.com/vno/r/nova/i/l/logo.png" alt="VNO">
+    Generate VNO One-Pager
+  </button>
+</div>
+
+<!-- PDF GENERATION MODAL -->
+<div class="pdf-modal-overlay" id="pdfModal">
+  <div class="pdf-modal">
+    <div class="pdf-spinner" id="pdfSpinner"></div>
+    <h3 id="pdfModalTitle">Generating Investment One-Pager</h3>
+    <p id="pdfModalSub">Vornado Realty Trust branded PDF</p>
+
+    <div class="pdf-steps" id="pdfSteps">
+      <div class="pdf-step" id="pdf-step-extract">
+        <div class="pdf-step-dot">1</div>
+        <span>Extracting key metrics from Excel</span>
+      </div>
+      <div class="pdf-step" id="pdf-step-layout">
+        <div class="pdf-step-dot">2</div>
+        <span>Designing branded VNO layout</span>
+      </div>
+      <div class="pdf-step" id="pdf-step-render">
+        <div class="pdf-step-dot">3</div>
+        <span>Rendering PDF document</span>
+      </div>
+    </div>
+
+    <div class="pdf-preview-actions" id="pdfActions" style="display:none">
+      <button class="btn-pdf-preview" onclick="previewPdf()">Preview</button>
+      <button class="btn-pdf-download" onclick="downloadPdf()">Download PDF</button>
+      <button class="btn-pdf-close" onclick="closePdfModal()">Close</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const dropZone = document.getElementById('dropZone');
@@ -368,6 +584,7 @@ async function handleFile(file) {
     if (!uploadRes.ok) throw new Error('Upload failed: ' + (await uploadRes.text()));
     const uploadData = await uploadRes.json();
     const filename = uploadData.fn;
+    currentFilename = filename;
     setStep('step-upload', 'done');
 
     // Step 2: Generate
@@ -395,6 +612,9 @@ async function handleFile(file) {
     setTimeout(() => {
       processingScreen.style.display = 'none';
       dashboardContainer.style.display = 'block';
+
+      // Show PDF button
+      document.getElementById('pdfFab').style.display = 'block';
 
       // Write the full dashboard HTML into an iframe for clean isolation
       const iframe = document.createElement('iframe');
@@ -426,6 +646,95 @@ async function handleFile(file) {
       uploadScreen.style.display = 'flex';
     }, 5000);
   }
+}
+
+// ─── PDF ONE-PAGER ───
+let currentFilename = null;
+let pdfHtmlData = null;
+
+function setPdfStep(stepId, state) {
+  const el = document.getElementById(stepId);
+  el.className = 'pdf-step ' + state;
+  if (state === 'done') el.querySelector('.pdf-step-dot').textContent = '✓';
+}
+
+async function startPdfGeneration() {
+  if (!currentFilename) return;
+
+  // Show modal
+  const modal = document.getElementById('pdfModal');
+  modal.classList.add('active');
+  document.getElementById('pdfSpinner').style.display = 'block';
+  document.getElementById('pdfSteps').style.display = 'block';
+  document.getElementById('pdfActions').style.display = 'none';
+  document.getElementById('pdfModalTitle').textContent = 'Generating Investment One-Pager';
+  document.getElementById('pdfModalSub').textContent = 'Vornado Realty Trust branded PDF';
+
+  // Reset steps
+  ['pdf-step-extract', 'pdf-step-layout', 'pdf-step-render'].forEach(id => {
+    const el = document.getElementById(id);
+    el.className = 'pdf-step';
+    el.querySelector('.pdf-step-dot').textContent = el.querySelector('.pdf-step-dot').textContent === '✓' ?
+      id.split('-')[2] === 'extract' ? '1' : id.split('-')[2] === 'layout' ? '2' : '3' : el.querySelector('.pdf-step-dot').textContent;
+  });
+  document.getElementById('pdf-step-extract').querySelector('.pdf-step-dot').textContent = '1';
+  document.getElementById('pdf-step-layout').querySelector('.pdf-step-dot').textContent = '2';
+  document.getElementById('pdf-step-render').querySelector('.pdf-step-dot').textContent = '3';
+
+  try {
+    setPdfStep('pdf-step-extract', 'active');
+
+    // Simulate step progress (the agent does all 3 in one call)
+    setTimeout(() => setPdfStep('pdf-step-extract', 'done'), 8000);
+    setTimeout(() => setPdfStep('pdf-step-layout', 'active'), 8500);
+    setTimeout(() => setPdfStep('pdf-step-layout', 'done'), 20000);
+    setTimeout(() => setPdfStep('pdf-step-render', 'active'), 20500);
+
+    const res = await fetch('/api/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: currentFilename })
+    });
+
+    if (!res.ok) throw new Error('PDF generation failed');
+    const data = await res.json();
+    pdfHtmlData = data.html;
+
+    // Mark all done
+    ['pdf-step-extract', 'pdf-step-layout', 'pdf-step-render'].forEach(id => setPdfStep(id, 'done'));
+
+    document.getElementById('pdfSpinner').style.display = 'none';
+    document.getElementById('pdfModalTitle').textContent = 'One-Pager Ready!';
+    document.getElementById('pdfModalSub').textContent = '225 W 83rd St — VNO Investment Summary';
+    document.getElementById('pdfActions').style.display = 'flex';
+
+  } catch (err) {
+    document.getElementById('pdfSpinner').style.display = 'none';
+    document.getElementById('pdfModalTitle').textContent = 'Generation Failed';
+    document.getElementById('pdfModalSub').textContent = err.message;
+    document.getElementById('pdfActions').innerHTML = '<button class="btn-pdf-close" onclick="closePdfModal()">Close</button>';
+    document.getElementById('pdfActions').style.display = 'flex';
+  }
+}
+
+function previewPdf() {
+  if (!pdfHtmlData) return;
+  const win = window.open('', '_blank');
+  win.document.write(pdfHtmlData);
+  win.document.close();
+}
+
+function downloadPdf() {
+  if (!pdfHtmlData) return;
+  const blob = new Blob([pdfHtmlData], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'VNO_Investment_OnePager.html';
+  a.click();
+}
+
+function closePdfModal() {
+  document.getElementById('pdfModal').classList.remove('active');
 }
 </script>
 
