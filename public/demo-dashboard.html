@@ -1,0 +1,877 @@
+<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'><title>Investment Dashboard</title><link href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap' rel='stylesheet'><style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}:root{--blue:#1EAAF1;--navy:#0C2340;--white:#fff;--light-blue:#EFF9FF;--border:#BAE6FD;--muted:#64748B}body{font-family:'Inter',system-ui,sans-serif;background:#F8FAFC;color:#0A0A0A;font-size:14px}.app-header{position:sticky;top:0;z-index:100;background:#0C2340;color:#fff;padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.3)}.app-header .prop-name{font-size:18px;font-weight:700;letter-spacing:-.3px}.app-header .prop-sub{font-size:12px;color:#94A3B8;margin-top:2px}.header-right{display:flex;gap:12px;align-items:center}.btn-download{background:#1EAAF1;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}.btn-download:hover{background:#0284C7}.tab-nav{position:sticky;top:64px;z-index:99;background:#fff;border-bottom:2px solid #BAE6FD;display:flex;padding:0 32px;gap:0}.tab-btn{background:none;border:none;padding:16px 24px;font-size:13px;font-weight:500;color:#64748B;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:inherit;transition:all .2s;white-space:nowrap}.tab-btn:hover{color:#1EAAF1}.tab-btn.active{color:#1EAAF1;border-bottom-color:#1EAAF1;font-weight:600}.tab-content{display:none;padding:32px;max-width:1400px;margin:0 auto}.tab-content.active{display:block}.section-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#1EAAF1;margin-bottom:12px;margin-top:32px}.section-label:first-child{margin-top:0}.card{background:#fff;border:1px solid #BAE6FD;border-radius:8px;padding:20px;box-shadow:0 1px 4px rgba(14,165,233,.08)}.stat-card{border-top:3px solid #1EAAF1;background:#fff;border-radius:0 0 8px 8px;padding:14px;box-shadow:0 1px 4px rgba(14,165,233,.08)}.stat-card .label,.stat-card h3{font-size:11px;color:#64748B;font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}.stat-card .value,.stat-card .stat,.stat-card p{font-size:18px;font-weight:700;color:#0C2340;margin:0}.stat-card .value.accent{color:#1EAAF1}.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#0C2340;color:#fff;padding:10px 14px;text-align:left;font-weight:600;font-size:12px;letter-spacing:.03em}td{padding:10px 14px;border-bottom:1px solid #E2E8F0}tr:nth-child(even) td{background:#EFF9FF}tr:hover td{background:#E0F2FE}.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600}.badge-green{background:#DCFCE7;color:#16A34A}.badge-orange{background:#FEF9C3;color:#D97706}.badge-purple{background:#EDE9FE;color:#7C3AED}.badge-blue{background:#DBEAFE;color:#1D4ED8}.highlight-row td{background:#EFF9FF!important;font-weight:600}.section-row td{background:#0C2340!important;color:#fff;font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase}.negative{color:#DC2626}.positive{color:#16A34A}.table-wrap{overflow-x:auto}.waterfall-row{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #E2E8F0}.waterfall-row.total{background:#EFF9FF;font-weight:700;font-size:16px;color:#1EAAF1}.app-footer{background:#0C2340;color:#94A3B8;text-align:center;padding:20px;font-size:12px;margin-top:48px}.divider{border:0;border-top:1px solid #BAE6FD;margin:24px 0}@media print{.tab-nav{display:none}.app-header{position:relative}.tab-content{display:block!important}*{page-break-inside:avoid}}@media(max-width:768px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:repeat(2,1fr)}.tab-btn{padding:12px 14px;font-size:12px}}</style></head><body><header class='app-header'><div><div class='prop-name'>Investment Dashboard</div><div class='prop-sub'>Real Estate Investment Packet</div></div><div class='header-right'><button class='btn-download' onclick='downloadHTML()'>Download HTML</button><button class='btn-download' style='background:#334155' onclick='window.print()'>Print</button></div></header><nav class='tab-nav'><button class='tab-btn active' data-tab='tab-1'>Overview</button><button class='tab-btn' data-tab='tab-2'>Financials</button><button class='tab-btn' data-tab='tab-3'>Rent Roll</button><button class='tab-btn' data-tab='tab-4'>Conversion</button><button class='tab-btn' data-tab='tab-5'>ARGUS Institutional</button></nav><script>document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.tab).classList.add('active')})});function downloadHTML(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([document.documentElement.outerHTML],{type:'text/html'}));a.download='Investment_Dashboard.html';a.click()}</script><main style='min-height:80vh'>
+<div id='tab-1' class='tab-content active'><div>
+ <section>
+ <h2 class="section-label">Property Snapshot</h2>
+ <div class="grid-4" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+ <div class="stat-card">
+ <div class="label">Address</div>
+ <div class="value">225 West 83rd Street</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Submarket</div>
+ <div class="value">Upper West Side</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Building Type</div>
+ <div class="value">Mixed-Use Townhouse</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Year Built/Renovated</div>
+ <div class="value">1899 / 2018</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Stories</div>
+ <div class="value">5 + Cellar</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Lot SF</div>
+ <div class="value">2,040 SF</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Gross Building SF</div>
+ <div class="value">8,750 SF</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Net Rentable SF</div>
+ <div class="value">7,820 SF</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Total Units</div>
+ <div class="value">6</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Zoning</div>
+ <div class="value">R8B</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">FAR</div>
+ <div class="value">4.00</div>
+ </div>
+ </div>
+ </section>
+
+ <section>
+ <h2 class="section-label">Transaction Summary</h2>
+ <div class="grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+ <div class="stat-card">
+ <div class="label">Asking Price</div>
+ <div class="value">$14,750,000</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Price/SF (Gross)</div>
+ <div class="value">$1,686</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Price/SF (Net)</div>
+ <div class="value">$1,886</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Price/Unit</div>
+ <div class="value">$2,458,333</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">In-Place NOI</div>
+ <div class="value">$612,000</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Going-In Cap Rate</div>
+ <div class="value">4.1%</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Stabilized NOI (Yr 3)</div>
+ <div class="value">$842,000</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Stabilized Cap Rate</div>
+ <div class="value">5.7%</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Loan Amount</div>
+ <div class="value">$8,850,000</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">LTV</div>
+ <div class="value">60.0%</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">DSCR (Yr 1)</div>
+ <div class="value">1.32x</div>
+ </div>
+ </div>
+ </section>
+
+ <section>
+ <h2 class="section-label">Sources of Capital</h2>
+ <div class="waterfall">
+ <div class="waterfall-row">
+ <div class="source">Senior Loan</div>
+ <div class="amount">$8,850,000</div>
+ <div class="percent">57.7%</div>
+ </div>
+ <div class="waterfall-row">
+ <div class="source">Sponsor Equity</div>
+ <div class="amount">$5,450,000</div>
+ <div class="percent">35.5%</div>
+ </div>
+ <div class="waterfall-row">
+ <div class="source">LP Equity</div>
+ <div class="amount">$1,050,000</div>
+ <div class="percent">6.8%</div>
+ </div>
+ <div class="waterfall-row total">
+ <div class="source">Total Sources</div>
+ <div class="amount">$15,350,000</div>
+ <div class="percent">100.0%</div>
+ </div>
+ </div>
+ </section>
+
+ <section>
+ <h2 class="section-label">Uses of Capital</h2>
+ <div class="waterfall">
+ <div class="waterfall-row">
+ <div class="source">Purchase Price</div>
+ <div class="amount">$14,750,000</div>
+ <div class="percent">95.0%</div>
+ </div>
+ <div class="waterfall-row">
+ <div class="source">Acquisition Costs (2.5%)</div>
+ <div class="amount">$368,750</div>
+ <div class="percent">2.4%</div>
+ </div>
+ <div class="waterfall-row">
+ <div class="source">Lender Fees (1.0% of Loan)</div>
+ <div class="amount">$88,500</div>
+ <div class="percent">0.6%</div>
+ </div>
+ <div class="waterfall-row">
+ <div class="source">Closing Reserves</div>
+ <div class="amount">$125,000</div>
+ <div class="percent">0.8%</div>
+ </div>
+ <div class="waterfall-row">
+ <div class="source">Cap-Ex Reserve (Year 1)</div>
+ <div class="amount">$200,000</div>
+ <div class="percent">1.3%</div>
+ </div>
+ <div class="waterfall-row total">
+ <div class="source">Total Uses</div>
+ <div class="amount">$15,532,250</div>
+ <div class="percent">100.0%</div>
+ </div>
+ </div>
+ </section>
+
+ <section>
+ <h2 class="section-label">Going-In Return Math</h2>
+ <div class="grid-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+ <div class="stat-card">
+ <div class="label">Gross Potential Rent</div>
+ <div class="value">$1,042,000</div>
+ </div>
+ <div class="stat-card negative">
+ <div class="label">Vacancy & Collection Loss</div>
+ <div class="value">$(52,100)</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Effective Gross Income</div>
+ <div class="value">$989,900</div>
+ </div>
+ <div class="stat-card negative">
+ <div class="label">Operating Expenses</div>
+ <div class="value">$(310,000)</div>
+ </div>
+ <div class="stat-card negative">
+ <div class="label">Real Estate Taxes</div>
+ <div class="value">$(120,000)</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Net Operating Income</div>
+ <div class="value">$559,900</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Purchase Price</div>
+ <div class="value">$14,750,000</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Going-In Cap Rate</div>
+ <div class="value">3.8%</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Annual Debt Service</div>
+ <div class="value">$688,811</div>
+ </div>
+ <div class="stat-card negative">
+ <div class="label">Cash Flow Before Tax</div>
+ <div class="value">$(128,911)</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">Debt Yield</div>
+ <div class="value">6.3%</div>
+ </div>
+ <div class="stat-card">
+ <div class="label">DSCR</div>
+ <div class="value">0.81x</div>
+ </div>
+ </div>
+ </section>
+</div></div>
+<div id='tab-2' class='tab-content'><div class="investment-returns">
+ <div class="returns-summary grid-3">
+ <div class="stat-card">
+ <h3>Levered IRR</h3>
+ <div class="stat">12.3%</div>
+ </div>
+ <div class="stat-card">
+ <h3>Equity Multiple</h3>
+ <div class="stat">2.19x</div>
+ </div>
+ <div class="stat-card">
+ <h3>Avg Annual Return</h3>
+ <div class="stat">16.9%</div>
+ </div>
+ <div class="stat-card">
+ <h3>Exit Cap Rate</h3>
+ <div class="stat">4.8%</div>
+ </div>
+ <div class="stat-card">
+ <h3>Exit Value</h3>
+ <div class="stat">$21,600,000</div>
+ </div>
+ <div class="stat-card">
+ <h3>Net Sale Proceeds</h3>
+ <div class="stat">$13,218,000</div>
+ </div>
+ </div>
+
+ <div class="section-label">Annual Returns</div>
+ <div class="table-wrap">
+ <table>
+ <thead>
+ <tr>
+ <th>Metric</th>
+ <th>Yr 1</th>
+ <th>Yr 2</th>
+ <th>Yr 3</th>
+ <th>Yr 4</th>
+ <th>Yr 5</th>
+ <th>Yr 6</th>
+ <th>Yr 7</th>
+ <th>Exit</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr class="section-row">
+ <td>Net Operating Income</td>
+ <td>$612,000</td>
+ <td>$728,000</td>
+ <td>$842,000</td>
+ <td>$876,000</td>
+ <td>$911,000</td>
+ <td>$948,000</td>
+ <td>$986,000</td>
+ <td>—</td>
+ </tr>
+ <tr>
+ <td>Annual Debt Service</td>
+ <td>$(689,000)</td>
+ <td>$(689,000)</td>
+ <td>$(689,000)</td>
+ <td>$(689,000)</td>
+ <td>$(689,000)</td>
+ <td>$(689,000)</td>
+ <td>$(689,000)</td>
+ <td>—</td>
+ </tr>
+ <tr>
+ <td>Cash Flow Before Tax</td>
+ <td class="negative">$(77,000)</td>
+ <td class="positive">$39,000</td>
+ <td class="positive">$153,000</td>
+ <td class="positive">$187,000</td>
+ <td class="positive">$222,000</td>
+ <td class="positive">$259,000</td>
+ <td class="positive">$297,000</td>
+ <td>$13,218,000</td>
+ </tr>
+ <tr>
+ <td>Equity Contribution</td>
+ <td>$(6,500,000)</td>
+ <td>—</td>
+ <td>—</td>
+ <td>—</td>
+ <td>—</td>
+ <td>—</td>
+ <td>—</td>
+ <td>—</td>
+ </tr>
+ <tr class="highlight-row">
+ <td>Investor Cash Flow</td>
+ <td>$(6,577,000)</td>
+ <td>$39,000</td>
+ <td>$153,000</td>
+ <td>$187,000</td>
+ <td>$222,000</td>
+ <td>$259,000</td>
+ <td>$297,000</td>
+ <td>$13,218,000</td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+</div></div>
+<div id='tab-3' class='tab-content'><div>
+ <h2 class="section-label">Occupancy Summary</h2>
+ <div class="grid-3">
+ <div class="stat-card">
+ <h3>Total Units</h3>
+ <div class="stat-value">6</div>
+ </div>
+ <div class="stat-card">
+ <h3>Occupied Units</h3>
+ <div class="stat-value">4</div>
+ </div>
+ <div class="stat-card">
+ <h3>Vacant Units</h3>
+ <div class="stat-value">2</div>
+ </div>
+ <div class="stat-card">
+ <h3>Physical Occupancy</h3>
+ <div class="stat-value">66.7%</div>
+ </div>
+ <div class="stat-card">
+ <h3>Total Rentable SF</h3>
+ <div class="stat-value">7,820</div>
+ </div>
+ <div class="stat-card">
+ <h3>In-Place Annual Rent</h3>
+ <div class="stat-value">$346,800</div>
+ </div>
+ <div class="stat-card">
+ <h3>Market Annual Rent</h3>
+ <div class="stat-value">$597,600</div>
+ </div>
+ <div class="stat-card">
+ <h3>Total Loss-to-Lease</h3>
+ <div class="stat-value">$483,600</div>
+ </div>
+ </div>
+
+ <h2 class="section-label">Unit Roster</h2>
+ <table class="table">
+ <thead>
+ <tr>
+ <th>Unit</th>
+ <th>Floor</th>
+ <th>Type</th>
+ <th>Bed/Bath</th>
+ <th>SF</th>
+ <th>Status</th>
+ <th>Tenant</th>
+ <th>Lease Start</th>
+ <th>Lease End</th>
+ <th>Monthly Rent</th>
+ <th>Annual Rent</th>
+ <th>Market Rent</th>
+ <th>Loss-to-Lease</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr>
+ <td>GRDN</td>
+ <td>Garden</td>
+ <td>Residential</td>
+ <td>2BR/2BA</td>
+ <td>1,150</td>
+ <td><span class="badge badge-green">Occupied</span></td>
+ <td>J. Ramirez</td>
+ <td>2024-09-01</td>
+ <td>2025-08-31</td>
+ <td>$7,200</td>
+ <td>$86,400</td>
+ <td>$7,800</td>
+ <td>$7,200</td>
+ </tr>
+ <tr>
+ <td>1</td>
+ <td>Parlor</td>
+ <td>Residential</td>
+ <td>2BR/2BA</td>
+ <td>1,280</td>
+ <td><span class="badge badge-green">Occupied</span></td>
+ <td>M. Goldberg</td>
+ <td>2023-06-01</td>
+ <td>2026-05-31</td>
+ <td>$8,100</td>
+ <td>$97,200</td>
+ <td>$8,400</td>
+ <td>$3,600</td>
+ </tr>
+ <tr>
+ <td>2</td>
+ <td>2nd</td>
+ <td>Residential</td>
+ <td>2BR/2BA</td>
+ <td>1,260</td>
+ <td><span class="badge badge-green">Occupied</span></td>
+ <td>S. Huang / R. Patel</td>
+ <td>2024-03-15</td>
+ <td>2026-03-14</td>
+ <td>$7,950</td>
+ <td>$95,400</td>
+ <td>$8,350</td>
+ <td>$4,800</td>
+ </tr>
+ <tr>
+ <td>3</td>
+ <td>3rd</td>
+ <td>Residential</td>
+ <td>1BR/1BA</td>
+ <td>880</td>
+ <td><span class="badge badge-orange">Vacant</span></td>
+ <td>—</td>
+ <td>—</td>
+ <td>—</td>
+ <td>$0</td>
+ <td>$0</td>
+ <td>$5,900</td>
+ <td>$70,800</td>
+ </tr>
+ <tr>
+ <td>4</td>
+ <td>4th</td>
+ <td>Residential</td>
+ <td>1BR/1BA</td>
+ <td>880</td>
+ <td><span class="badge badge-green">Occupied</span></td>
+ <td>L. Martinelli</td>
+ <td>2025-01-01</td>
+ <td>2026-12-31</td>
+ <td>$5,650</td>
+ <td>$67,800</td>
+ <td>$5,850</td>
+ <td>$2,400</td>
+ </tr>
+ <tr>
+ <td>PH</td>
+ <td>Penthouse</td>
+ <td>Residential</td>
+ <td>3BR/2.5BA + Terrace</td>
+ <td>2,370</td>
+ <td><span class="badge badge-purple">Vacant - Renovating</span></td>
+ <td>—</td>
+ <td>—</td>
+ <td>—</td>
+ <td>$0</td>
+ <td>$0</td>
+ <td>$13,500</td>
+ <td>$162,000</td>
+ </tr>
+ </tbody>
+ </table>
+
+ <h2 class="section-label">Master Lease Abstract</h2>
+ <table class="table">
+ <thead>
+ <tr>
+ <th>Unit</th>
+ <th>Tenant</th>
+ <th>Lease Start</th>
+ <th>Term (mos)</th>
+ <th>Lease End</th>
+ <th>Base Rent</th>
+ <th>Escalation</th>
+ <th>Security Deposit</th>
+ <th>Renewal Option</th>
+ <th>Notice (days)</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr>
+ <td>GRDN</td>
+ <td>Javier Ramirez</td>
+ <td>2024-09-01</td>
+ <td>12</td>
+ <td>2025-08-31</td>
+ <td>$7,200</td>
+ <td class="highlight-row">3.0% Annual</td>
+ <td>$14,400</td>
+ <td>1 x 1-Year</td>
+ <td>60</td>
+ </tr>
+ <tr>
+ <td>1</td>
+ <td>Michael Goldberg</td>
+ <td>2023-06-01</td>
+ <td>36</td>
+ <td>2026-05-31</td>
+ <td>$8,100</td>
+ <td class="highlight-row">3.5% Annual</td>
+ <td>$16,200</td>
+ <td>None</td>
+ <td>90</td>
+ </tr>
+ <tr>
+ <td>2</td>
+ <td>Sophia Huang & Ravi Patel</td>
+ <td>2024-03-15</td>
+ <td>24</td>
+ <td>2026-03-14</td>
+ <td>$7,950</td>
+ <td class="highlight-row">3.0% Annual</td>
+ <td>$15,900</td>
+ <td>1 x 1-Year</td>
+ <td>60</td>
+ </tr>
+ <tr>
+ <td>3</td>
+ <td>VACANT</td>
+ <td>—</td>
+ <td>0</td>
+ <td>—</td>
+ <td>$0</td>
+ <td>—</td>
+ <td>$0</td>
+ <td>—</td>
+ <td>0</td>
+ </tr>
+ <tr>
+ <td>4</td>
+ <td>Lorenzo Martinelli</td>
+ <td>2025-01-01</td>
+ <td>24</td>
+ <td>2026-12-31</td>
+ <td>$5,650</td>
+ <td class="highlight-row">3.0% Annual</td>
+ <td>$11,300</td>
+ <td>1 x 1-Year</td>
+ <td>60</td>
+ </tr>
+ <tr>
+ <td>PH</td>
+ <td>VACANT (in renovation)</td>
+ <td>—</td>
+ <td>0</td>
+ <td>—</td>
+ <td>$0</td>
+ <td>—</td>
+ <td>$0</td>
+ <td>—</td>
+ <td>0</td>
+ </tr>
+ </tbody>
+ </table>
+</div></div>
+<div id='tab-4' class='tab-content'><div>
+ <section>
+ <h2 class="section-label">Single-Family Townhouse At a Glance</h2>
+ <div class="grid-3">
+ <div class="stat-card">
+ <h3>Dimensions</h3>
+ <p>Width: 20 ft</p>
+ <p>Depth: 102 ft</p>
+ <p>Stories: 5 + Cellar</p>
+ </div>
+ <div class="stat-card">
+ <h3>Building Details</h3>
+ <p>Gross SF: 8,750 sq ft</p>
+ <p>Outdoor: Roof Deck + Garden</p>
+ </div>
+ <div class="stat-card">
+ <h3>Residential Capacity</h3>
+ <p>Bedrooms: 6</p>
+ <p>Bathrooms: 6</p>
+ <p>Parking: None</p>
+ </div>
+ </div>
+ </section>
+
+ <section>
+ <h2 class="section-label">Conversion Economics</h2>
+ <div class="grid-2">
+ <div class="card waterfall-row">
+ <h3>Investment Waterfall</h3>
+ <p>Purchase Price: <span class="negative">$14,750,000</span></p>
+ <p>Conversion Costs: <span class="negative">$3,200,000</span></p>
+ <p>Carry/Financing: <span class="negative">$425,000</span></p>
+ <p>All-In Basis: <span class="negative">$18,375,000</span></p>
+ <p>All-In Basis/SF: <span>$2,100</span></p>
+ </div>
+ <div class="card waterfall-row">
+ <h3>Projected Returns</h3>
+ <p>Recent UWS SFH Value/SF: <span>$2,350</span></p>
+ <p>Projected Sale Value: <span class="positive">$20,562,500</span></p>
+ <p>Projected Profit: <span class="positive">$2,187,500</span></p>
+ <p>Profit Margin: <span class="positive">11.9%</span></p>
+ </div>
+ </div>
+ </section>
+
+ <section>
+ <h2 class="section-label">Comparable Single-Family Sales</h2>
+ <table>
+ <thead>
+ <tr>
+ <th>Address</th>
+ <th>Sale Date</th>
+ <th>Sale Price</th>
+ <th>Width</th>
+ <th>Stories</th>
+ <th>GSF</th>
+ <th>$/SF</th>
+ <th>Condition</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr>
+ <td>W 77th St</td>
+ <td>2025-11-12</td>
+ <td>$18,500,000</td>
+ <td>20 ft</td>
+ <td>5</td>
+ <td>7,900</td>
+ <td>$2,341.77</td>
+ <td>Fully Renovated</td>
+ </tr>
+ <tr>
+ <td>W 84th St</td>
+ <td>2025-07-22</td>
+ <td>$14,250,000</td>
+ <td>18 ft</td>
+ <td>5</td>
+ <td>7,400</td>
+ <td>$1,925.68</td>
+ <td>Renovated</td>
+ </tr>
+ <tr>
+ <td>W 87th St</td>
+ <td>2025-03-04</td>
+ <td>$21,750,000</td>
+ <td>25 ft</td>
+ <td>5</td>
+ <td>9,600</td>
+ <td>$2,265.63</td>
+ <td>Gut-Renovated</td>
+ </tr>
+ <tr>
+ <td>W 81st St</td>
+ <td>2024-12-10</td>
+ <td>$12,900,000</td>
+ <td>18 ft</td>
+ <td>4</td>
+ <td>6,800</td>
+ <td>$1,897.06</td>
+ <td>Partial Reno</td>
+ </tr>
+ <tr>
+ <td>W 95th St</td>
+ <td>2024-10-28</td>
+ <td>$16,800,000</td>
+ <td>20 ft</td>
+ <td>5</td>
+ <td>8,500</td>
+ <td>$1,976.47</td>
+ <td>Renovated</td>
+ </tr>
+ </tbody>
+ </table>
+ </section>
+
+ <section>
+ <h2 class="section-label">Floor Plan Descriptions</h2>
+ <div class="grid-2">
+ <div class="card">
+ <h3>Garden Floor (2BR/2BA) — 1,150 SF</h3>
+ <p>Private 20'x24' bluestone patio</p>
+ <p>Layout: Kitchen, Living/Dining, Two Bedrooms, Two Bathrooms</p>
+ <p>Key Features: Private garden access, spacious living areas</p>
+ </div>
+ <div class="card">
+ <h3>Parlor Floor (2BR/2BA) — 1,280 SF</h3>
+ <p>12'-6" ceilings, double parlor</p>
+ <p>Layout: Foyer, Chef's Kitchen, Living/Dining, Primary Bedroom, Secondary Bedroom</p>
+ <p>Key Features: Original plaster moldings, gas fireplace</p>
+ </div>
+ <div class="card">
+ <h3>2nd Floor (2BR/2BA) — 1,260 SF</h3>
+ <p>Layout: Kitchen/Dining, Living Room, Two Bedrooms, Two Bathrooms</p>
+ <p>Key Features: Open floor plan, ample natural light</p>
+ </div>
+ <div class="card">
+ <h3>3rd/4th Floors (1BR/1BA) — 880 SF each</h3>
+ <p>Layout: Open Living/Kitchen, Bedroom, Bathroom, Office/Nook</p>
+ <p>Key Features: Efficient design, flexible space</p>
+ </div>
+ <div class="card">
+ <h3>Penthouse (3BR/2.5BA) — 2,370 SF</h3>
+ <p>~600 SF Private Rooftop Terrace</p>
+ <p>Layout: Living/Dining, Open Kitchen, Primary Suite, Two Additional Bedrooms, Powder Room</p>
+ <p>Key Features: Double-height ceilings, skyline views, walk-in closets</p>
+ </div>
+ </div>
+ </section>
+</div></div>
+<div id='tab-5' class='tab-content'><div>
+ <div class="section-label">ARGUS Enterprise Export</div>
+ <div class="grid-3">
+ <div class="stat-card">
+ <strong>File:</strong> 225_W_83rd_St_v12.axve
+ </div>
+ <div class="stat-card">
+ <strong>Export Date:</strong> 4/10/2026
+ </div>
+ <div class="stat-card">
+ <strong>Analysis Start:</strong> 4/1/2026
+ </div>
+ </div>
+ <div class="card table-wrap">
+ <table>
+ <thead>
+ <tr>
+ <th>Line Item</th>
+ <th>Year 1</th>
+ <th>Year 2</th>
+ <th>Year 3</th>
+ <th>Year 4</th>
+ <th>Year 5</th>
+ <th>Year 6</th>
+ <th>Year 7</th>
+ <th>Year 8</th>
+ <th>Year 9</th>
+ <th>Year 10</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr class="section-row">
+ <td colspan="11">Rental Revenue</td>
+ </tr>
+ <tr>
+ <td>Potential Base Rent</td>
+ <td>$1,042,000</td>
+ <td>$1,094,100</td>
+ <td>$1,148,805</td>
+ <td>$1,195,357</td>
+ <td>$1,243,179</td>
+ <td>$1,292,906</td>
+ <td>$1,344,622</td>
+ <td>$1,398,407</td>
+ <td>$1,454,343</td>
+ <td>$1,512,517</td>
+ </tr>
+ <tr class="section-row">
+ <td colspan="11">Operating Expenses</td>
+ </tr>
+ <tr>
+ <td>Real Estate Taxes</td>
+ <td>$120,000</td>
+ <td>$124,800</td>
+ <td>$129,792</td>
+ <td>$134,984</td>
+ <td>$140,383</td>
+ <td>$145,998</td>
+ <td>$151,838</td>
+ <td>$157,912</td>
+ <td>$164,228</td>
+ <td>$170,797</td>
+ </tr>
+ <tr class="highlight-row">
+ <td>Net Operating Income</td>
+ <td>$756,325</td>
+ <td>$814,466</td>
+ <td>$870,560</td>
+ <td>$913,299</td>
+ <td>$951,053</td>
+ <td>$990,342</td>
+ <td>$1,031,246</td>
+ <td>$1,073,822</td>
+ <td>$1,118,138</td>
+ <td>$1,164,273</td>
+ </tr>
+ <tr class="highlight-row">
+ <td>Cash Flow Before Debt Service</td>
+ <td>$720,325</td>
+ <td>$785,016</td>
+ <td>$845,646</td>
+ <td>$887,908</td>
+ <td>$925,170</td>
+ <td>$963,953</td>
+ <td>$1,004,335</td>
+ <td>$1,046,374</td>
+ <td>$1,090,136</td>
+ <td>$1,135,701</td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ <div class="card">
+ <div class="section-label">Rent Roll</div>
+ <table>
+ <thead>
+ <tr>
+ <th>Unit</th>
+ <th>Status</th>
+ <th>SF</th>
+ <th>Tenant</th>
+ <th>Lease Start</th>
+ <th>Lease End</th>
+ <th>Base Rent</th>
+ <th>Base Rent/SF</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr>
+ <td>GRDN</td>
+ <td><span class="badge badge-green">Occupied</span></td>
+ <td>1,150</td>
+ <td>J. Ramirez</td>
+ <td>9/1/2024</td>
+ <td>8/31/2025</td>
+ <td>$86,400</td>
+ <td>$75.13</td>
+ </tr>
+ <tr>
+ <td>101</td>
+ <td><span class="badge badge-green">Occupied</span></td>
+ <td>1,280</td>
+ <td>M. Goldberg</td>
+ <td>6/1/2023</td>
+ <td>5/31/2026</td>
+ <td>$97,200</td>
+ <td>$75.94</td>
+ </tr>
+ <tr>
+ <td>301</td>
+ <td><span class="badge badge-orange">Vacant</span></td>
+ <td>880</td>
+ <td>—</td>
+ <td>—</td>
+ <td>—</td>
+ <td>$0</td>
+ <td>$0.00</td>
+ </tr>
+ <tr>
+ <td>PH</td>
+ <td><span class="badge badge-purple">Spec</span></td>
+ <td>2,370</td>
+ <td>In Renovation</td>
+ <td>—</td>
+ <td>—</td>
+ <td>$0</td>
+ <td>$0.00</td>
+ </tr>
+ </tbody>
+ </table>
+ <div class="grid-3">
+ <div class="stat-card">
+ <strong>Market Rent Growth:</strong> 3.0%/year
+ </div>
+ <div class="stat-card">
+ <strong>Term Length:</strong> 24 months
+ </div>
+ <div class="stat-card">
+ <strong>Renewal Probability:</strong> 65%
+ </div>
+ </div>
+ </div>
+</div></div>
+</main><footer class='app-footer'>Confidential | For Authorized Recipients Only | This document is not an offer to sell or solicitation to buy securities.</footer></body></html>
