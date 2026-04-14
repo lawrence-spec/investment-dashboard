@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Investment Dashboard Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: #0A0A0A; min-height: 100vh; }
@@ -658,9 +659,29 @@ function setPdfStep(stepId, state) {
   if (state === 'done') el.querySelector('.pdf-step-dot').textContent = '✓';
 }
 
-async function startPdfGeneration() {
-  if (!currentFilename) return;
+function extractDashboardData() {
+  // Extract text content from the dashboard iframe — no need to re-read the Excel
+  const iframe = document.querySelector('#dashboardContainer iframe');
+  if (!iframe || !iframe.contentDocument) return '';
 
+  const doc = iframe.contentDocument;
+  const sections = [];
+
+  // Grab all tab content sections (each tab has its own data)
+  doc.querySelectorAll('.tab-content, [id*="tab-"], table, .section, .card, .stat').forEach(el => {
+    const text = el.innerText.trim();
+    if (text.length > 10) sections.push(text);
+  });
+
+  // If specific selectors didn't get much, fall back to full body text
+  if (sections.join('\n').length < 200) {
+    return doc.body.innerText;
+  }
+
+  return sections.join('\n\n');
+}
+
+async function startPdfGeneration() {
   // Show modal
   const modal = document.getElementById('pdfModal');
   modal.classList.add('active');
@@ -671,41 +692,65 @@ async function startPdfGeneration() {
   document.getElementById('pdfModalSub').textContent = 'Vornado Realty Trust branded PDF';
 
   // Reset steps
-  ['pdf-step-extract', 'pdf-step-layout', 'pdf-step-render'].forEach(id => {
-    const el = document.getElementById(id);
-    el.className = 'pdf-step';
-    el.querySelector('.pdf-step-dot').textContent = el.querySelector('.pdf-step-dot').textContent === '✓' ?
-      id.split('-')[2] === 'extract' ? '1' : id.split('-')[2] === 'layout' ? '2' : '3' : el.querySelector('.pdf-step-dot').textContent;
-  });
   document.getElementById('pdf-step-extract').querySelector('.pdf-step-dot').textContent = '1';
   document.getElementById('pdf-step-layout').querySelector('.pdf-step-dot').textContent = '2';
   document.getElementById('pdf-step-render').querySelector('.pdf-step-dot').textContent = '3';
+  ['pdf-step-extract', 'pdf-step-layout', 'pdf-step-render'].forEach(id => {
+    document.getElementById(id).className = 'pdf-step';
+  });
+
+  // Restore action buttons in case of previous error
+  document.getElementById('pdfActions').innerHTML =
+    '<button class="btn-pdf-preview" onclick="previewPdf()">Preview</button>' +
+    '<button class="btn-pdf-download" onclick="downloadPdf()">Download PDF</button>' +
+    '<button class="btn-pdf-close" onclick="closePdfModal()">Close</button>';
 
   try {
+    // Step 1: Extract data from the dashboard already on screen
     setPdfStep('pdf-step-extract', 'active');
+    const dashboardData = extractDashboardData();
+    if (!dashboardData || dashboardData.length < 100) {
+      throw new Error('Could not extract data from the dashboard. Please make sure the dashboard is loaded.');
+    }
+    setPdfStep('pdf-step-extract', 'done');
 
-    // Simulate step progress (the agent does all 3 in one call)
-    setTimeout(() => setPdfStep('pdf-step-extract', 'done'), 8000);
-    setTimeout(() => setPdfStep('pdf-step-layout', 'active'), 8500);
-    setTimeout(() => setPdfStep('pdf-step-layout', 'done'), 20000);
-    setTimeout(() => setPdfStep('pdf-step-render', 'active'), 20500);
+    // Step 2: Send to NeuralSeek to design the branded layout
+    setPdfStep('pdf-step-layout', 'active');
 
     const res = await fetch('/api/generate-pdf', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename: currentFilename })
+      body: JSON.stringify({ dashboard_data: dashboardData })
     });
 
-    if (!res.ok) throw new Error('PDF generation failed');
+    if (!res.ok) throw new Error('PDF generation failed: ' + (await res.text()));
     const data = await res.json();
     pdfHtmlData = data.html;
 
-    // Mark all done
-    ['pdf-step-extract', 'pdf-step-layout', 'pdf-step-render'].forEach(id => setPdfStep(id, 'done'));
+    if (!pdfHtmlData || pdfHtmlData.length < 200) {
+      throw new Error('PDF agent returned insufficient content. Please try again.');
+    }
+
+    setPdfStep('pdf-step-layout', 'done');
+
+    // Step 3: Render to actual PDF via html2pdf.js
+    setPdfStep('pdf-step-render', 'active');
+
+    // Pre-render the HTML into a hidden container for html2pdf
+    const pdfContainer = document.createElement('div');
+    pdfContainer.id = 'pdf-render-container';
+    pdfContainer.style.cssText = 'position:absolute;left:-9999px;top:0;width:1000px;';
+    pdfContainer.innerHTML = pdfHtmlData;
+    document.body.appendChild(pdfContainer);
+
+    // Small delay to let images/fonts load
+    await new Promise(r => setTimeout(r, 1500));
+
+    setPdfStep('pdf-step-render', 'done');
 
     document.getElementById('pdfSpinner').style.display = 'none';
     document.getElementById('pdfModalTitle').textContent = 'One-Pager Ready!';
-    document.getElementById('pdfModalSub').textContent = '225 W 83rd St — VNO Investment Summary';
+    document.getElementById('pdfModalSub').textContent = 'VNO Investment Summary — Preview or download as PDF';
     document.getElementById('pdfActions').style.display = 'flex';
 
   } catch (err) {
@@ -724,17 +769,49 @@ function previewPdf() {
   win.document.close();
 }
 
-function downloadPdf() {
+async function downloadPdf() {
   if (!pdfHtmlData) return;
-  const blob = new Blob([pdfHtmlData], { type: 'text/html' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'VNO_Investment_OnePager.html';
-  a.click();
+
+  // Use the pre-rendered container if it exists, otherwise create one
+  let container = document.getElementById('pdf-render-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'pdf-render-container';
+    container.style.cssText = 'position:absolute;left:-9999px;top:0;width:1000px;';
+    container.innerHTML = pdfHtmlData;
+    document.body.appendChild(container);
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  const opt = {
+    margin:       [0.2, 0.2, 0.2, 0.2],
+    filename:     'VNO_Investment_OnePager.pdf',
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, logging: false },
+    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+    pagebreak:    { mode: ['avoid-all'] }
+  };
+
+  try {
+    await html2pdf().set(opt).from(container).save();
+  } catch (e) {
+    console.error('PDF download error:', e);
+    // Fallback: download as HTML
+    const blob = new Blob([pdfHtmlData], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'VNO_Investment_OnePager.html';
+    a.click();
+  }
+
+  // Cleanup
+  if (container) container.remove();
 }
 
 function closePdfModal() {
   document.getElementById('pdfModal').classList.remove('active');
+  const container = document.getElementById('pdf-render-container');
+  if (container) container.remove();
 }
 </script>
 

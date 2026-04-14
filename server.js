@@ -72,10 +72,10 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
-// Generate PDF one-pager
+// Generate PDF one-pager from dashboard data (no Excel re-read)
 app.post('/api/generate-pdf', async (req, res) => {
   try {
-    const { filename } = req.body;
+    const { dashboard_data } = req.body;
 
     const response = await fetch(`${PUBLIC_URL}/maistro`, {
       method: 'POST',
@@ -85,7 +85,7 @@ app.post('/api/generate-pdf', async (req, res) => {
       },
       body: JSON.stringify({
         agent: '225-PDF-OnePager',
-        params: [{ name: 'excel_file', value: filename }],
+        params: [{ name: 'dashboard_data', value: dashboard_data }],
         options: { returnVariables: true }
       })
     });
@@ -98,30 +98,6 @@ app.post('/api/generate-pdf', async (req, res) => {
   }
 });
 
-// Download a generated file from NeuralSeek
-app.get('/api/download/:filename', async (req, res) => {
-  try {
-    const response = await fetch(`${PUBLIC_URL}/maistro`, {
-      method: 'POST',
-      headers: {
-        'apikey': API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        agent: '225-PDF-OnePager',
-        params: [{ name: 'excel_file', value: req.params.filename }],
-        options: { returnVariables: true }
-      })
-    });
-
-    const data = await response.json();
-    const html = data.variables?.pdf_html || '';
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 const PORT = process.env.PORT || 3225;
 app.listen(PORT, () => {
