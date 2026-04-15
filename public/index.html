@@ -794,13 +794,19 @@ async function startPdfGeneration() {
     // Step 3: Pre-render in hidden iframe so styles/fonts load correctly
     setPdfStep('pdf-step-render', 'active');
 
-    // Create a hidden iframe — html2pdf needs a fully rendered document, not innerHTML
+    // Create a hidden iframe sized to match letter page (8.5in - 0.6in margins = 7.9in ≈ 758px)
+    const pdfPageWidth = 758;
     const pdfIframe = document.createElement('iframe');
     pdfIframe.id = 'pdf-render-iframe';
-    pdfIframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:1000px;height:1400px;border:none;';
+    pdfIframe.style.cssText = `position:fixed;left:-9999px;top:0;width:${pdfPageWidth}px;height:2000px;border:none;`;
     document.body.appendChild(pdfIframe);
+
+    // Inject the HTML with a wrapper that constrains width to match PDF page
+    const wrappedHtml = pdfHtmlData.replace('</head>',
+      `<style>html,body{width:${pdfPageWidth}px!important;max-width:${pdfPageWidth}px!important;overflow:hidden!important;}table{max-width:100%!important;word-break:break-word;}img{max-width:100%!important;}</style></head>`
+    );
     pdfIframe.contentDocument.open();
-    pdfIframe.contentDocument.write(pdfHtmlData);
+    pdfIframe.contentDocument.write(wrappedHtml);
     pdfIframe.contentDocument.close();
 
     // Wait for iframe content + fonts + images to fully load
@@ -840,16 +846,21 @@ async function downloadPdf() {
   const btn = document.querySelector('.btn-pdf-download');
   if (btn) { btn.disabled = true; btn.textContent = 'Generating PDF...'; }
 
+  const pdfPageWidth = 758; // letter page (8.5in) minus 0.3in margins each side at 96dpi
+
   // Get the rendered iframe body — it has all styles applied correctly
   let pdfIframe = document.getElementById('pdf-render-iframe');
   if (!pdfIframe) {
     // Recreate if cleaned up
     pdfIframe = document.createElement('iframe');
     pdfIframe.id = 'pdf-render-iframe';
-    pdfIframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:1000px;height:1400px;border:none;';
+    pdfIframe.style.cssText = `position:fixed;left:-9999px;top:0;width:${pdfPageWidth}px;height:2000px;border:none;`;
     document.body.appendChild(pdfIframe);
+    const wrappedHtml = pdfHtmlData.replace('</head>',
+      `<style>html,body{width:${pdfPageWidth}px!important;max-width:${pdfPageWidth}px!important;overflow:hidden!important;}table{max-width:100%!important;word-break:break-word;}img{max-width:100%!important;}</style></head>`
+    );
     pdfIframe.contentDocument.open();
-    pdfIframe.contentDocument.write(pdfHtmlData);
+    pdfIframe.contentDocument.write(wrappedHtml);
     pdfIframe.contentDocument.close();
     await new Promise(resolve => {
       pdfIframe.onload = resolve;
@@ -868,8 +879,8 @@ async function downloadPdf() {
       scale: 2,
       useCORS: true,
       logging: false,
-      width: 1000,
-      windowWidth: 1000
+      width: pdfPageWidth,
+      windowWidth: pdfPageWidth
     },
     jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
     pagebreak:    { mode: ['avoid-all'] }
