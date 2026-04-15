@@ -79,7 +79,37 @@ app.post('/api/generate-pdf', async (req, res) => {
   try {
     const { dashboard_data } = req.body;
 
+    // Step 0: Extract address and build Google Maps image URLs for the PDF
+    let mapImageUrls = '';
+    if (GOOGLE_MAPS_KEY) {
+      // Extract address from dashboard text
+      const addrMatch = dashboard_data.match(/Address\s*\n?\s*(.+?)(?:\n|$)/i)
+        || dashboard_data.match(/(\d+\s+(?:West|East|North|South|W|E|N|S)\.?\s+\d+\w*\s+(?:Street|St|Avenue|Ave))/i);
+      if (addrMatch) {
+        const addr = addrMatch[1].trim();
+        const fullAddr = addr.match(/new york|ny/i) ? addr : addr + ', New York, NY';
+        try {
+          const geoRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddr)}&key=${GOOGLE_MAPS_KEY}`);
+          const geoData = await geoRes.json();
+          if (geoData.results && geoData.results.length > 0) {
+            const { lat, lng } = geoData.results[0].geometry.location;
+            const sat = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=18&size=640x400&maptype=satellite&key=${GOOGLE_MAPS_KEY}`;
+            const sv0 = `https://maps.googleapis.com/maps/api/streetview?size=640x400&location=${lat},${lng}&heading=0&pitch=10&key=${GOOGLE_MAPS_KEY}`;
+            const sv90 = `https://maps.googleapis.com/maps/api/streetview?size=640x400&location=${lat},${lng}&heading=90&pitch=10&key=${GOOGLE_MAPS_KEY}`;
+            const sv180 = `https://maps.googleapis.com/maps/api/streetview?size=640x400&location=${lat},${lng}&heading=180&pitch=10&key=${GOOGLE_MAPS_KEY}`;
+            const sv270 = `https://maps.googleapis.com/maps/api/streetview?size=640x400&location=${lat},${lng}&heading=270&pitch=10&key=${GOOGLE_MAPS_KEY}`;
+            mapImageUrls = JSON.stringify({ satellite: sat, north: sv0, east: sv90, south: sv180, west: sv270 });
+          }
+        } catch (e) { /* geocode failed — proceed without images */ }
+      }
+    }
+
     // Step 1: Call the NeuralSeek agent (generates HTML + creates PDF via createPDF node)
+    const params = [{ name: 'dashboard_data', value: dashboard_data }];
+    if (mapImageUrls) {
+      params.push({ name: 'map_image_urls', value: mapImageUrls });
+    }
+
     const agentResponse = await fetch(`${PUBLIC_URL}/maistro`, {
       method: 'POST',
       headers: {
@@ -88,7 +118,7 @@ app.post('/api/generate-pdf', async (req, res) => {
       },
       body: JSON.stringify({
         agent: '225-PDF-OnePager',
-        params: [{ name: 'dashboard_data', value: dashboard_data }],
+        params,
         options: { returnVariables: true }
       })
     });

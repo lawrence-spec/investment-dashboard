@@ -694,7 +694,7 @@ async function handleFile(file) {
           btn.addEventListener('click', () => setTimeout(resize, 50));
         });
         // Inject Location tab with Google Maps
-        injectLocationTab(iframe);
+        injectLocationImages(iframe);
       };
     }, 600);
 
@@ -837,10 +837,9 @@ function closePdfModal() {
   document.getElementById('pdfModal').classList.remove('active');
 }
 
-// ─── LOCATION TAB INJECTION ───
-async function injectLocationTab(iframe) {
+// ─── LOCATION IMAGES (injected into Overview tab) ───
+async function injectLocationImages(iframe) {
   try {
-    // Check if Google Maps is available
     const configRes = await fetch('/api/map-config');
     const config = await configRes.json();
     if (!config.available) return;
@@ -848,7 +847,7 @@ async function injectLocationTab(iframe) {
     const doc = iframe.contentDocument;
     if (!doc) return;
 
-    // Extract address from the dashboard
+    // Extract address from dashboard stat cards
     let address = '';
     doc.querySelectorAll('.stat-card, .card').forEach(card => {
       const label = card.querySelector('.label, h3');
@@ -857,91 +856,74 @@ async function injectLocationTab(iframe) {
         address = value.textContent.trim();
       }
     });
-
     if (!address) {
-      // Fallback: look for common address patterns in the page text
       const bodyText = doc.body.innerText;
-      const addrMatch = bodyText.match(/\d+\s+(?:West|East|North|South|W|E|N|S)\.?\s+\d+\w*\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd)/i);
-      if (addrMatch) address = addrMatch[0];
+      const m = bodyText.match(/\d+\s+(?:West|East|North|South|W|E|N|S)\.?\s+\d+\w*\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd)/i);
+      if (m) address = m[0];
     }
-
     if (!address) return;
 
-    // Add city context if not present
     const fullAddress = address.match(/new york|ny|manhattan/i) ? address : address + ', New York, NY';
-
-    // Fetch map images
     const mapRes = await fetch(`/api/map-images?address=${encodeURIComponent(fullAddress)}`);
     const mapData = await mapRes.json();
     if (!mapData.available) return;
 
-    // Add Location tab button
-    const tabNav = doc.querySelector('.tab-nav');
-    if (!tabNav) return;
+    // Find the Overview tab content (tab-1)
+    const overviewTab = doc.getElementById('tab-1');
+    if (!overviewTab) return;
 
-    const tabBtn = doc.createElement('button');
-    tabBtn.className = 'tab-btn';
-    tabBtn.dataset.tab = 'tab-location';
-    tabBtn.textContent = '📍 Location';
-    tabNav.appendChild(tabBtn);
-
-    // Build the Location tab content
-    const tabContent = doc.createElement('div');
-    tabContent.id = 'tab-location';
-    tabContent.className = 'tab-content';
-    tabContent.innerHTML = `
+    // Build the location section
+    const locationSection = doc.createElement('div');
+    locationSection.id = 'location-section';
+    locationSection.innerHTML = `
+      <hr style="border:0;border-top:1px solid #BAE6FD;margin:28px 0;">
       <h2 class="section-label">Property Location</h2>
-      <div style="margin-bottom:24px;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.15);">
-        <iframe
-          src="${mapData.embedUrl}"
-          width="100%" height="450"
-          style="border:0;display:block;"
-          allowfullscreen loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade">
-        </iframe>
+
+      <!-- Interactive Map + Satellite side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.12);position:relative;">
+          <iframe src="${mapData.embedUrl}" width="100%" height="280"
+            style="border:0;display:block;" allowfullscreen loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"></iframe>
+          <div style="position:absolute;bottom:8px;left:10px;background:rgba(12,35,64,0.85);color:#fff;padding:3px 10px;border-radius:16px;font-size:10px;font-weight:600;">Interactive Map</div>
+        </div>
+        <div style="position:relative;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.12);">
+          <img src="${mapData.satellite}" alt="Satellite view" style="width:100%;height:280px;object-fit:cover;display:block;" data-map-role="satellite">
+          <div style="position:absolute;bottom:8px;left:10px;background:rgba(12,35,64,0.85);color:#fff;padding:3px 10px;border-radius:16px;font-size:10px;font-weight:600;">Satellite Overhead</div>
+        </div>
       </div>
 
-      <h2 class="section-label">Satellite Overhead</h2>
-      <div style="margin-bottom:24px;">
-        <img src="${mapData.satellite}" alt="Satellite view" style="width:100%;max-width:700px;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.12);" data-map-role="satellite">
-      </div>
-
+      <!-- Street Views 4-up -->
       <h2 class="section-label">Street-Level Views</h2>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
         ${mapData.streetViews.map(sv => `
-          <div style="position:relative;">
-            <img src="${sv.src}" alt="${sv.label} view" style="width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);" data-map-role="streetview">
-            <div style="position:absolute;top:10px;left:10px;background:rgba(12,35,64,0.85);color:#fff;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.05em;">${sv.label}</div>
+          <div style="position:relative;border-radius:8px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.1);">
+            <img src="${sv.src}" alt="${sv.label} view" style="width:100%;height:160px;object-fit:cover;display:block;" data-map-role="streetview">
+            <div style="position:absolute;bottom:6px;left:8px;background:rgba(12,35,64,0.85);color:#fff;padding:2px 10px;border-radius:16px;font-size:10px;font-weight:600;letter-spacing:0.03em;">${sv.label}</div>
           </div>
         `).join('')}
       </div>
     `;
 
-    // Insert tab content into the main area
-    const main = doc.querySelector('main');
-    if (main) main.appendChild(tabContent);
+    // Append to the end of Overview tab
+    overviewTab.appendChild(locationSection);
 
-    // Wire up tab switching for the new button
-    tabBtn.addEventListener('click', () => {
-      doc.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      doc.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      tabBtn.classList.add('active');
-      tabContent.classList.add('active');
-      // Resize iframe
-      setTimeout(() => {
-        iframe.style.height = doc.documentElement.scrollHeight + 'px';
-      }, 100);
-    });
-
-    // Resize after images load
-    tabContent.querySelectorAll('img').forEach(img => {
+    // Resize iframe after images load
+    let loaded = 0;
+    const imgs = locationSection.querySelectorAll('img');
+    imgs.forEach(img => {
       img.onload = () => {
-        iframe.style.height = doc.documentElement.scrollHeight + 'px';
+        loaded++;
+        if (loaded >= imgs.length) {
+          iframe.style.height = doc.documentElement.scrollHeight + 'px';
+        }
       };
     });
+    // Also resize after embed loads
+    setTimeout(() => { iframe.style.height = doc.documentElement.scrollHeight + 'px'; }, 2000);
 
   } catch (err) {
-    console.warn('Location tab injection failed:', err);
+    console.warn('Location images injection failed:', err);
   }
 }
 
@@ -986,7 +968,7 @@ async function loadDemo() {
         b.addEventListener('click', () => setTimeout(resize, 50));
       });
       // Inject Location tab with Google Maps
-      injectLocationTab(iframe);
+      injectLocationImages(iframe);
     };
 
   } catch (err) {
