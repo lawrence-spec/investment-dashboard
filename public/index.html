@@ -739,9 +739,35 @@ function setPdfStep(stepId, state) {
 function extractDashboardHtml() {
   const iframe = document.querySelector('#dashboardContainer iframe');
   if (!iframe || !iframe.contentDocument) return '';
+  const doc = iframe.contentDocument;
 
-  // Grab the full rendered HTML from the iframe (includes injected styles + location images)
-  return iframe.contentDocument.documentElement.outerHTML;
+  // Grab only the Overview tab (tab-1) + header for the one-pager PDF
+  const header = doc.querySelector('.app-header');
+  const overviewTab = doc.getElementById('tab-1');
+  if (!overviewTab) {
+    // Fallback: send everything if we can't find the overview tab
+    return doc.documentElement.outerHTML;
+  }
+
+  // Collect all <style> and <link> tags from <head> so styles carry over
+  const headContent = Array.from(doc.querySelectorAll('head style, head link[rel="stylesheet"]'))
+    .map(el => el.outerHTML).join('\n');
+
+  // Build a minimal HTML doc with just header + overview content
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  ${headContent}
+</head>
+<body>
+  ${header ? header.outerHTML : ''}
+  <div style="padding:36px 40px;">
+    ${overviewTab.innerHTML}
+  </div>
+</body>
+</html>`;
 }
 
 async function startPdfGeneration() {
