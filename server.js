@@ -83,7 +83,7 @@ app.post('/api/generate-pdf', async (req, res) => {
       return res.status(400).json({ error: 'No HTML content provided' });
     }
 
-    // Step 1: Send HTML to the simple converter agent (text → createPDF)
+    // Step 1: Send HTML to the converter agent (LLM preps for print, then createPDF)
     const agentResponse = await fetch(`${PUBLIC_URL}/maistro`, {
       method: 'POST',
       headers: {
@@ -101,6 +101,9 @@ app.post('/api/generate-pdf', async (req, res) => {
       return res.status(500).json({ error: `Agent call failed: ${agentResponse.status}` });
     }
 
+    const agentData = await agentResponse.json();
+    const printHtml = agentData.variables?.pdf_ready_html || agentData.answer || '';
+
     // Step 2: Download the real PDF binary from NeuralSeek file storage
     const pdfResponse = await fetch(`${CONSOLE_URL}/maistro/octet-stream/VNO_Investment_OnePager.pdf`, {
       method: 'GET',
@@ -114,7 +117,7 @@ app.post('/api/generate-pdf', async (req, res) => {
     const pdfBuffer = await pdfResponse.buffer();
     const pdfBase64 = pdfBuffer.toString('base64');
 
-    res.json({ pdf: pdfBase64 });
+    res.json({ html: printHtml, pdf: pdfBase64 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

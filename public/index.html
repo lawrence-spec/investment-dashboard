@@ -782,6 +782,7 @@ async function startPdfGeneration() {
 
     if (data.error) throw new Error(data.error);
 
+    if (data.html) pdfHtmlData = data.html;
     pdfBase64Data = data.pdf;
 
     // Mark all steps done
