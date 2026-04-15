@@ -5,9 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Investment Dashboard Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://use.typekit.net/proxima-nova.css" rel="stylesheet">
+<style>
+  @font-face {
+    font-family: 'Proxima Nova';
+    src: local('Proxima Nova'), local('ProximaNova-Regular');
+    font-weight: 400;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Proxima Nova';
+    src: local('Proxima Nova Bold'), local('ProximaNova-Bold');
+    font-weight: 700;
+    font-style: normal;
+  }
+</style>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: #0A0A0A; min-height: 100vh; }
+body { font-family: 'Proxima Nova', 'Inter', system-ui, -apple-system, sans-serif; background: #f5f5f5; color: #333333; min-height: 100vh; }
 
 /* Upload screen */
 .upload-screen {
@@ -27,7 +42,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 .upload-header h1 {
   font-size: 32px;
   font-weight: 800;
-  color: #0C2340;
+  color: #232323;
   letter-spacing: -0.5px;
   margin-bottom: 8px;
 }
@@ -41,7 +56,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 .drop-zone {
   width: 100%;
   max-width: 600px;
-  border: 2px dashed #BAE6FD;
+  border: 2px dashed #b8dce9;
   border-radius: 16px;
   padding: 64px 40px;
   text-align: center;
@@ -52,10 +67,10 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 }
 
 .drop-zone:hover, .drop-zone.drag-over {
-  border-color: #1EAAF1;
-  background: #EFF9FF;
+  border-color: #35b7e7;
+  background: #e8f4fa;
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(30, 170, 241, 0.15);
+  box-shadow: 0 8px 32px rgba(53, 183, 231, 0.15);
 }
 
 .drop-zone.drag-over {
@@ -65,7 +80,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 .drop-icon {
   width: 72px;
   height: 72px;
-  background: #EFF9FF;
+  background: #e8f4fa;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -75,13 +90,13 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 }
 
 .drop-zone.drag-over .drop-icon {
-  background: #BAE6FD;
+  background: #b8dce9;
 }
 
 .drop-zone h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #0C2340;
+  color: #232323;
   margin-bottom: 8px;
 }
 
@@ -91,7 +106,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 }
 
 .drop-zone .browse-link {
-  color: #1EAAF1;
+  color: #35b7e7;
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
@@ -111,19 +126,19 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 
 .processing-card {
   background: #fff;
-  border: 1px solid #BAE6FD;
+  border: 1px solid #b8dce9;
   border-radius: 16px;
   padding: 48px;
   max-width: 500px;
   width: 100%;
   text-align: center;
-  box-shadow: 0 4px 24px rgba(14, 165, 233, 0.08);
+  box-shadow: 0 4px 24px rgba(53, 183, 231, 0.08);
 }
 
 .processing-card h2 {
   font-size: 20px;
   font-weight: 700;
-  color: #0C2340;
+  color: #232323;
   margin-bottom: 8px;
 }
 
@@ -154,7 +169,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 }
 
 .step.active {
-  color: #0C2340;
+  color: #232323;
   font-weight: 500;
 }
 
@@ -177,8 +192,8 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 }
 
 .step.active .step-icon {
-  background: #EFF9FF;
-  color: #1EAAF1;
+  background: #e8f4fa;
+  color: #35b7e7;
   animation: pulse 1.5s infinite;
 }
 
@@ -188,15 +203,15 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(30, 170, 241, 0.3); }
-  50% { box-shadow: 0 0 0 8px rgba(30, 170, 241, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(53, 183, 231, 0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(53, 183, 231, 0); }
 }
 
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #EFF9FF;
-  border-top-color: #1EAAF1;
+  border: 4px solid #e8f4fa;
+  border-top-color: #35b7e7;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin: 0 auto 24px;
@@ -240,7 +255,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
   border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Proxima Nova', 'Inter', system-ui, sans-serif;
   cursor: pointer;
   box-shadow: 0 4px 20px rgba(200, 16, 46, 0.35);
   transition: all 0.2s;
@@ -295,7 +310,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 .pdf-modal h3 {
   font-size: 18px;
   font-weight: 700;
-  color: #0C2340;
+  color: #232323;
   margin-bottom: 4px;
 }
 
@@ -329,7 +344,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
   gap: 10px;
 }
 
-.pdf-modal .pdf-step.active { color: #0C2340; font-weight: 500; }
+.pdf-modal .pdf-step.active { color: #232323; font-weight: 500; }
 .pdf-modal .pdf-step.done { color: #16A34A; }
 
 .pdf-modal .pdf-step-dot {
@@ -387,7 +402,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 
 .btn-pdf-preview {
   background: #F1F5F9;
-  color: #0C2340;
+  color: #232323;
 }
 
 .btn-pdf-preview:hover { background: #E2E8F0; }
@@ -428,12 +443,12 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 .demo-btn {
   margin-top: 16px;
   padding: 12px 28px;
-  border: 1.5px solid #1EAAF1;
+  border: 1.5px solid #35b7e7;
   background: transparent;
-  color: #1EAAF1;
+  color: #35b7e7;
   font-size: 14px;
   font-weight: 600;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Proxima Nova', 'Inter', system-ui, sans-serif;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s;
@@ -443,7 +458,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 }
 
 .demo-btn:hover {
-  background: #1EAAF1;
+  background: #35b7e7;
   color: #fff;
 }
 
@@ -461,7 +476,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 }
 
 .powered-by span {
-  color: #1EAAF1;
+  color: #137ea4;
   font-weight: 600;
 }
 </style>
@@ -471,7 +486,8 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
 <!-- UPLOAD SCREEN -->
 <div class="upload-screen" id="uploadScreen">
   <div class="upload-header">
-    <h1>Investment Dashboard Generator</h1>
+    <img src="https://cdn-vno.reol.com/vno/r/nova/i/l/logo.png" alt="Vornado Realty Trust" style="height:48px;margin-bottom:20px;display:block;margin-left:auto;margin-right:auto;">
+    <h1 style="color:#232323;">Investment Dashboard Generator</h1>
     <p>Drop your Excel investment packet below and we'll turn it into an interactive dashboard in seconds.</p>
   </div>
 
@@ -837,40 +853,46 @@ function polishDashboard(iframe) {
   // Inject refined styles into the dashboard iframe
   const style = doc.createElement('style');
   style.textContent = `
+    /* ── VNO Brand: Proxima Nova + Color Palette ── */
+    * { font-family: 'Proxima Nova', 'Inter', system-ui, -apple-system, sans-serif !important; }
+
     /* Better section spacing */
     section { margin-bottom: 36px; }
     .section-label {
       font-size: 12px !important;
       font-weight: 700 !important;
       letter-spacing: 0.08em !important;
-      color: #0C2340 !important;
+      text-transform: uppercase !important;
+      color: #232323 !important;
       margin-bottom: 16px !important;
       margin-top: 0 !important;
       padding-bottom: 10px;
-      border-bottom: 2px solid #BAE6FD;
+      border-bottom: 2px solid #35b7e7;
     }
 
-    /* Stat card refinement */
+    /* Stat card refinement — VNO accent */
     .stat-card {
       padding: 18px !important;
       border-radius: 8px !important;
-      border: 1px solid #E8EFF6;
-      border-top: 3px solid #1EAAF1;
+      border: 1px solid #d9d9d9;
+      border-top: 3px solid #35b7e7;
+      background: #ffffff;
       transition: box-shadow 0.2s;
     }
     .stat-card:hover {
-      box-shadow: 0 4px 16px rgba(14,165,233,0.12);
+      box-shadow: 0 4px 16px rgba(53,183,231,0.15);
     }
     .stat-card .label, .stat-card h3 {
       font-size: 10px !important;
       letter-spacing: 0.06em !important;
-      color: #8899AA !important;
+      text-transform: uppercase !important;
+      color: #666666 !important;
       margin-bottom: 8px !important;
     }
     .stat-card .value, .stat-card .stat, .stat-card p, .stat-card .stat-value {
       font-size: 20px !important;
       font-weight: 700 !important;
-      color: #0C2340 !important;
+      color: #232323 !important;
       line-height: 1.2;
     }
 
@@ -885,7 +907,7 @@ function polishDashboard(iframe) {
     /* Waterfall rows — card style */
     .waterfall {
       background: #fff;
-      border: 1px solid #E8EFF6;
+      border: 1px solid #d9d9d9;
       border-radius: 10px;
       overflow: hidden;
     }
@@ -895,61 +917,92 @@ function polishDashboard(iframe) {
       grid-template-columns: 1fr auto auto;
       gap: 24px;
       align-items: center;
-      border-bottom: 1px solid #F1F5F9;
+      border-bottom: 1px solid #f5f5f5;
     }
     .waterfall-row:last-child { border-bottom: none; }
-    .waterfall-row .source { font-weight: 500; color: #334155; }
-    .waterfall-row .amount { font-weight: 700; color: #0C2340; font-variant-numeric: tabular-nums; }
-    .waterfall-row .percent { font-size: 12px; color: #8899AA; min-width: 50px; text-align: right; }
+    .waterfall-row .source { font-weight: 500; color: #333333; }
+    .waterfall-row .amount { font-weight: 700; color: #232323; font-variant-numeric: tabular-nums; }
+    .waterfall-row .percent { font-size: 12px; color: #666666; min-width: 50px; text-align: right; }
     .waterfall-row.total {
-      background: #EFF9FF !important;
-      border-top: 2px solid #BAE6FD;
+      background: #e8f4fa !important;
+      border-top: 2px solid #35b7e7;
     }
-    .waterfall-row.total .source { font-weight: 700; color: #0C2340; }
-    .waterfall-row.total .amount { color: #1EAAF1; font-size: 18px; }
+    .waterfall-row.total .source { font-weight: 700; color: #232323; }
+    .waterfall-row.total .amount { color: #137ea4; font-size: 18px; }
 
-    /* Tables — refined */
-    table { border-radius: 8px; overflow: hidden; border: 1px solid #E8EFF6; }
+    /* Tables — VNO dark header */
+    table { border-radius: 8px; overflow: hidden; border: 1px solid #d9d9d9; }
     th {
-      background: #0C2340 !important;
+      background: #232323 !important;
+      color: #ffffff !important;
       padding: 12px 16px !important;
       font-size: 11px !important;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
-    td { padding: 12px 16px !important; font-size: 13px; }
-    tr:nth-child(even) td { background: #FAFCFE !important; }
-    tr:hover td { background: #EFF9FF !important; }
+    td { padding: 12px 16px !important; font-size: 13px; color: #333333; }
+    tr:nth-child(even) td { background: #f5f5f5 !important; }
+    tr:hover td { background: #e8f4fa !important; }
 
-    /* Header polish */
+    /* Header — VNO dark */
     .app-header {
       height: 72px !important;
       padding: 0 40px !important;
+      background: #232323 !important;
     }
-    .app-header .prop-name { font-size: 20px !important; }
+    .app-header .prop-name {
+      font-size: 20px !important;
+      color: #ffffff !important;
+    }
+    .app-header .prop-sub, .app-header .subtitle {
+      color: #bbbbbb !important;
+    }
 
-    /* Tab nav polish */
+    /* Tab nav — VNO style */
     .tab-nav {
       padding: 0 40px !important;
       gap: 4px !important;
-      background: #FAFCFE !important;
-      border-bottom: 1px solid #E2E8F0 !important;
+      background: #ffffff !important;
+      border-bottom: 1px solid #d9d9d9 !important;
     }
     .tab-btn {
       padding: 14px 20px !important;
       font-size: 13px !important;
       font-weight: 500 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.04em !important;
+      color: #666666 !important;
       border-radius: 6px 6px 0 0;
       transition: all 0.15s;
     }
+    .tab-btn:hover {
+      color: #35b7e7 !important;
+    }
     .tab-btn.active {
       background: #fff !important;
-      border-bottom: 3px solid #1EAAF1 !important;
+      color: #35b7e7 !important;
+      border-bottom: 3px solid #35b7e7 !important;
       font-weight: 700 !important;
     }
 
-    /* Footer */
-    .app-footer { margin-top: 60px !important; padding: 24px !important; }
+    /* Footer — VNO dark */
+    .app-footer {
+      margin-top: 60px !important;
+      padding: 24px 40px !important;
+      background: #000000 !important;
+      color: #bbbbbb !important;
+    }
+    .app-footer a { color: #35b7e7 !important; }
+
+    /* Accent color overrides for any inline --blue CSS vars */
+    :root {
+      --blue: #35b7e7 !important;
+      --navy: #232323 !important;
+    }
+
+    /* Positive/negative values */
+    .positive, .up { color: #008031 !important; }
+    .negative, .down { color: #C8102E !important; }
   `;
   doc.head.appendChild(style);
 }
@@ -995,7 +1048,7 @@ async function injectLocationImages(iframe) {
     locationSection.style.cssText = 'margin-top:32px;';
     locationSection.innerHTML = `
       <h2 class="section-label">Property Location</h2>
-      <div style="background:#fff;border:1px solid #BAE6FD;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(14,165,233,0.06);">
+      <div style="background:#fff;border:1px solid #d9d9d9;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(53,183,231,0.08);">
         <!-- Interactive Map — full width hero -->
         <div style="position:relative;">
           <iframe src="${mapData.embedUrl}" width="100%" height="320"
@@ -1006,12 +1059,12 @@ async function injectLocationImages(iframe) {
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0;">
           <div style="position:relative;overflow:hidden;">
             <img src="${mapData.satellite}" alt="Satellite" style="width:100%;height:140px;object-fit:cover;display:block;" data-map-role="satellite">
-            <div style="position:absolute;bottom:6px;left:8px;background:rgba(12,35,64,0.9);color:#fff;padding:2px 10px;border-radius:12px;font-size:9px;font-weight:600;letter-spacing:0.04em;">Satellite</div>
+            <div style="position:absolute;bottom:6px;left:8px;background:rgba(35,35,35,0.9);color:#fff;padding:2px 10px;border-radius:12px;font-size:9px;font-weight:600;letter-spacing:0.04em;">Satellite</div>
           </div>
           ${mapData.streetViews.map(sv => `
           <div style="position:relative;overflow:hidden;">
             <img src="${sv.src}" alt="${sv.label}" style="width:100%;height:140px;object-fit:cover;display:block;" data-map-role="streetview">
-            <div style="position:absolute;bottom:6px;left:8px;background:rgba(12,35,64,0.9);color:#fff;padding:2px 10px;border-radius:12px;font-size:9px;font-weight:600;letter-spacing:0.04em;">${sv.label}</div>
+            <div style="position:absolute;bottom:6px;left:8px;background:rgba(35,35,35,0.9);color:#fff;padding:2px 10px;border-radius:12px;font-size:9px;font-weight:600;letter-spacing:0.04em;">${sv.label}</div>
           </div>
           `).join('')}
         </div>
