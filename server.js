@@ -73,43 +73,17 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
-// Generate PDF one-pager from dashboard data (no Excel re-read)
-// Agent generates branded HTML + PDF via createPDF node, then we download the PDF from NeuralSeek.
+// Generate PDF from the already-rendered dashboard HTML.
+// Frontend sends the full HTML — agent just pipes it through createPDF. No LLM needed.
 app.post('/api/generate-pdf', async (req, res) => {
   try {
-    const { dashboard_data } = req.body;
+    const { html_content } = req.body;
 
-    // Step 0: Extract address and build Google Maps image URLs for the PDF
-    let mapImageUrls = '';
-    if (GOOGLE_MAPS_KEY) {
-      // Extract address from dashboard text
-      const addrMatch = dashboard_data.match(/Address\s*\n?\s*(.+?)(?:\n|$)/i)
-        || dashboard_data.match(/(\d+\s+(?:West|East|North|South|W|E|N|S)\.?\s+\d+\w*\s+(?:Street|St|Avenue|Ave))/i);
-      if (addrMatch) {
-        const addr = addrMatch[1].trim();
-        const fullAddr = addr.match(/new york|ny/i) ? addr : addr + ', New York, NY';
-        try {
-          const geoRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddr)}&key=${GOOGLE_MAPS_KEY}`);
-          const geoData = await geoRes.json();
-          if (geoData.results && geoData.results.length > 0) {
-            const { lat, lng } = geoData.results[0].geometry.location;
-            const sat = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=18&size=640x400&maptype=satellite&key=${GOOGLE_MAPS_KEY}`;
-            const sv0 = `https://maps.googleapis.com/maps/api/streetview?size=640x400&location=${lat},${lng}&heading=0&pitch=10&key=${GOOGLE_MAPS_KEY}`;
-            const sv90 = `https://maps.googleapis.com/maps/api/streetview?size=640x400&location=${lat},${lng}&heading=90&pitch=10&key=${GOOGLE_MAPS_KEY}`;
-            const sv180 = `https://maps.googleapis.com/maps/api/streetview?size=640x400&location=${lat},${lng}&heading=180&pitch=10&key=${GOOGLE_MAPS_KEY}`;
-            const sv270 = `https://maps.googleapis.com/maps/api/streetview?size=640x400&location=${lat},${lng}&heading=270&pitch=10&key=${GOOGLE_MAPS_KEY}`;
-            mapImageUrls = JSON.stringify({ satellite: sat, north: sv0, east: sv90, south: sv180, west: sv270 });
-          }
-        } catch (e) { /* geocode failed — proceed without images */ }
-      }
+    if (!html_content || html_content.length < 100) {
+      return res.status(400).json({ error: 'No HTML content provided' });
     }
 
-    // Step 1: Call the NeuralSeek agent (generates HTML + creates PDF via createPDF node)
-    const params = [{ name: 'dashboard_data', value: dashboard_data }];
-    if (mapImageUrls) {
-      params.push({ name: 'map_image_urls', value: mapImageUrls });
-    }
-
+    // Step 1: Send HTML to the simple converter agent (text → createPDF)
     const agentResponse = await fetch(`${PUBLIC_URL}/maistro`, {
       method: 'POST',
       headers: {
@@ -117,14 +91,15 @@ app.post('/api/generate-pdf', async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        agent: '225-PDF-OnePager',
-        params,
+        agent: '225-HTML-to-PDF',
+        params: [{ name: 'html_content', value: html_content }],
         options: { returnVariables: true }
       })
     });
 
-    const agentData = await agentResponse.json();
-    const pdfHtml = agentData.variables?.pdf_html || agentData.answer || '';
+    if (!agentResponse.ok) {
+      return res.status(500).json({ error: `Agent call failed: ${agentResponse.status}` });
+    }
 
     // Step 2: Download the real PDF binary from NeuralSeek file storage
     const pdfResponse = await fetch(`${CONSOLE_URL}/maistro/octet-stream/VNO_Investment_OnePager.pdf`, {
@@ -139,7 +114,7 @@ app.post('/api/generate-pdf', async (req, res) => {
     const pdfBuffer = await pdfResponse.buffer();
     const pdfBase64 = pdfBuffer.toString('base64');
 
-    res.json({ html: pdfHtml, pdf: pdfBase64 });
+    res.json({ pdf: pdfBase64 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

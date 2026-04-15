@@ -546,15 +546,15 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
     <div class="pdf-steps" id="pdfSteps">
       <div class="pdf-step" id="pdf-step-extract">
         <div class="pdf-step-dot">1</div>
-        <span>Reading dashboard data</span>
+        <span>Capturing dashboard HTML</span>
       </div>
       <div class="pdf-step" id="pdf-step-layout">
         <div class="pdf-step-dot">2</div>
-        <span>Designing branded VNO layout</span>
+        <span>Sending to NeuralSeek</span>
       </div>
       <div class="pdf-step" id="pdf-step-render">
         <div class="pdf-step-dot">3</div>
-        <span>Rendering PDF document</span>
+        <span>Generating PDF</span>
       </div>
     </div>
 
@@ -720,22 +720,12 @@ function setPdfStep(stepId, state) {
   if (state === 'done') el.querySelector('.pdf-step-dot').textContent = '✓';
 }
 
-function extractDashboardData() {
+function extractDashboardHtml() {
   const iframe = document.querySelector('#dashboardContainer iframe');
   if (!iframe || !iframe.contentDocument) return '';
 
-  const doc = iframe.contentDocument;
-  const sections = [];
-
-  doc.querySelectorAll('.tab-content, [id*="tab-"], table, .section, .card, .stat').forEach(el => {
-    const text = el.innerText.trim();
-    if (text.length > 10) sections.push(text);
-  });
-
-  if (sections.join('\n').length < 200) {
-    return doc.body.innerText;
-  }
-  return sections.join('\n\n');
+  // Grab the full rendered HTML from the iframe (includes injected styles + location images)
+  return iframe.contentDocument.documentElement.outerHTML;
 }
 
 async function startPdfGeneration() {
@@ -762,44 +752,44 @@ async function startPdfGeneration() {
 
   try {
     // Step 1: Extract data from the dashboard already on screen
+    // Step 1: Capture the full rendered HTML from the dashboard iframe
     setPdfStep('pdf-step-extract', 'active');
-    const dashboardData = extractDashboardData();
-    if (!dashboardData || dashboardData.length < 100) {
-      throw new Error('Could not extract data from the dashboard.');
+    const htmlContent = extractDashboardHtml();
+    if (!htmlContent || htmlContent.length < 100) {
+      throw new Error('Could not extract HTML from the dashboard.');
     }
+    pdfHtmlData = htmlContent;
     setPdfStep('pdf-step-extract', 'done');
 
-    // Step 2: Send to NeuralSeek agent (uses createPDF on their end)
+    // Step 2: Send HTML to NeuralSeek createPDF agent
     setPdfStep('pdf-step-layout', 'active');
 
-    // Simulated step progress while agent works
-    const layoutTimer = setTimeout(() => {
+    const renderTimer = setTimeout(() => {
       setPdfStep('pdf-step-layout', 'done');
       setPdfStep('pdf-step-render', 'active');
-    }, 15000);
+    }, 5000);
 
     const res = await fetch('/api/generate-pdf', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dashboard_data: dashboardData })
+      body: JSON.stringify({ html_content: htmlContent })
     });
 
-    clearTimeout(layoutTimer);
+    clearTimeout(renderTimer);
 
     if (!res.ok) throw new Error('PDF generation failed: ' + (await res.text()));
     const data = await res.json();
 
     if (data.error) throw new Error(data.error);
 
-    pdfHtmlData = data.html;
     pdfBase64Data = data.pdf;
 
     // Mark all steps done
     ['pdf-step-extract', 'pdf-step-layout', 'pdf-step-render'].forEach(id => setPdfStep(id, 'done'));
 
     document.getElementById('pdfSpinner').style.display = 'none';
-    document.getElementById('pdfModalTitle').textContent = 'One-Pager Ready!';
-    document.getElementById('pdfModalSub').textContent = 'VNO Investment Summary — Preview or download';
+    document.getElementById('pdfModalTitle').textContent = 'PDF Ready!';
+    document.getElementById('pdfModalSub').textContent = 'Investment Dashboard PDF — Preview or download';
     document.getElementById('pdfActions').style.display = 'flex';
 
   } catch (err) {
@@ -814,7 +804,7 @@ async function startPdfGeneration() {
 function previewPdf() {
   if (!pdfHtmlData) return;
   const win = window.open('', '_blank');
-  win.document.write(pdfHtmlData);
+  win.document.write('<!DOCTYPE html>' + pdfHtmlData);
   win.document.close();
 }
 
