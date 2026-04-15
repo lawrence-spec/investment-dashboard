@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Investment Dashboard Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: #0A0A0A; min-height: 100vh; }
@@ -547,7 +546,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #F8FAFC; color: 
     <div class="pdf-steps" id="pdfSteps">
       <div class="pdf-step" id="pdf-step-extract">
         <div class="pdf-step-dot">1</div>
-        <span>Extracting key metrics from Excel</span>
+        <span>Reading dashboard data</span>
       </div>
       <div class="pdf-step" id="pdf-step-layout">
         <div class="pdf-step-dot">2</div>
@@ -710,6 +709,7 @@ async function handleFile(file) {
 // ─── PDF ONE-PAGER ───
 let currentFilename = null;
 let pdfHtmlData = null;
+let pdfBase64Data = null;
 
 function setPdfStep(stepId, state) {
   const el = document.getElementById(stepId);
@@ -718,29 +718,24 @@ function setPdfStep(stepId, state) {
 }
 
 function extractDashboardData() {
-  // Extract text content from the dashboard iframe — no need to re-read the Excel
   const iframe = document.querySelector('#dashboardContainer iframe');
   if (!iframe || !iframe.contentDocument) return '';
 
   const doc = iframe.contentDocument;
   const sections = [];
 
-  // Grab all tab content sections (each tab has its own data)
   doc.querySelectorAll('.tab-content, [id*="tab-"], table, .section, .card, .stat').forEach(el => {
     const text = el.innerText.trim();
     if (text.length > 10) sections.push(text);
   });
 
-  // If specific selectors didn't get much, fall back to full body text
   if (sections.join('\n').length < 200) {
     return doc.body.innerText;
   }
-
   return sections.join('\n\n');
 }
 
 async function startPdfGeneration() {
-  // Show modal
   const modal = document.getElementById('pdfModal');
   modal.classList.add('active');
   document.getElementById('pdfSpinner').style.display = 'block';
@@ -757,9 +752,8 @@ async function startPdfGeneration() {
     document.getElementById(id).className = 'pdf-step';
   });
 
-  // Restore action buttons in case of previous error
   document.getElementById('pdfActions').innerHTML =
-    '<button class="btn-pdf-preview" onclick="previewPdf()">Preview</button>' +
+    '<button class="btn-pdf-preview" onclick="previewPdf()">Preview HTML</button>' +
     '<button class="btn-pdf-download" onclick="downloadPdf()">Download PDF</button>' +
     '<button class="btn-pdf-close" onclick="closePdfModal()">Close</button>';
 
@@ -768,12 +762,18 @@ async function startPdfGeneration() {
     setPdfStep('pdf-step-extract', 'active');
     const dashboardData = extractDashboardData();
     if (!dashboardData || dashboardData.length < 100) {
-      throw new Error('Could not extract data from the dashboard. Please make sure the dashboard is loaded.');
+      throw new Error('Could not extract data from the dashboard.');
     }
     setPdfStep('pdf-step-extract', 'done');
 
-    // Step 2: Send to NeuralSeek to design the branded layout
+    // Step 2: Send to NeuralSeek agent (uses createPDF on their end)
     setPdfStep('pdf-step-layout', 'active');
+
+    // Simulated step progress while agent works
+    const layoutTimer = setTimeout(() => {
+      setPdfStep('pdf-step-layout', 'done');
+      setPdfStep('pdf-step-render', 'active');
+    }, 15000);
 
     const res = await fetch('/api/generate-pdf', {
       method: 'POST',
@@ -781,47 +781,22 @@ async function startPdfGeneration() {
       body: JSON.stringify({ dashboard_data: dashboardData })
     });
 
+    clearTimeout(layoutTimer);
+
     if (!res.ok) throw new Error('PDF generation failed: ' + (await res.text()));
     const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
     pdfHtmlData = data.html;
+    pdfBase64Data = data.pdf;
 
-    if (!pdfHtmlData || pdfHtmlData.length < 200) {
-      throw new Error('PDF agent returned insufficient content. Please try again.');
-    }
-
-    setPdfStep('pdf-step-layout', 'done');
-
-    // Step 3: Pre-render in hidden iframe so styles/fonts load correctly
-    setPdfStep('pdf-step-render', 'active');
-
-    // Create a hidden iframe sized to match letter page (8.5in - 0.6in margins = 7.9in ≈ 758px)
-    const pdfPageWidth = 758;
-    const pdfIframe = document.createElement('iframe');
-    pdfIframe.id = 'pdf-render-iframe';
-    pdfIframe.style.cssText = `position:fixed;left:-9999px;top:0;width:${pdfPageWidth}px;height:2000px;border:none;`;
-    document.body.appendChild(pdfIframe);
-
-    // Inject the HTML with a wrapper that constrains width to match PDF page
-    const wrappedHtml = pdfHtmlData.replace('</head>',
-      `<style>html,body{width:${pdfPageWidth}px!important;max-width:${pdfPageWidth}px!important;overflow:hidden!important;}table{max-width:100%!important;word-break:break-word;}img{max-width:100%!important;}</style></head>`
-    );
-    pdfIframe.contentDocument.open();
-    pdfIframe.contentDocument.write(wrappedHtml);
-    pdfIframe.contentDocument.close();
-
-    // Wait for iframe content + fonts + images to fully load
-    await new Promise(resolve => {
-      pdfIframe.onload = resolve;
-      setTimeout(resolve, 3000); // fallback timeout
-    });
-    // Extra buffer for Google Fonts
-    await new Promise(r => setTimeout(r, 1500));
-
-    setPdfStep('pdf-step-render', 'done');
+    // Mark all steps done
+    ['pdf-step-extract', 'pdf-step-layout', 'pdf-step-render'].forEach(id => setPdfStep(id, 'done'));
 
     document.getElementById('pdfSpinner').style.display = 'none';
     document.getElementById('pdfModalTitle').textContent = 'One-Pager Ready!';
-    document.getElementById('pdfModalSub').textContent = 'VNO Investment Summary — Preview or download as PDF';
+    document.getElementById('pdfModalSub').textContent = 'VNO Investment Summary — Preview or download';
     document.getElementById('pdfActions').style.display = 'flex';
 
   } catch (err) {
@@ -840,70 +815,24 @@ function previewPdf() {
   win.document.close();
 }
 
-async function downloadPdf() {
-  if (!pdfHtmlData) return;
-
-  const btn = document.querySelector('.btn-pdf-download');
-  if (btn) { btn.disabled = true; btn.textContent = 'Generating PDF...'; }
-
-  const pdfPageWidth = 758; // letter page (8.5in) minus 0.3in margins each side at 96dpi
-
-  // Get the rendered iframe body — it has all styles applied correctly
-  let pdfIframe = document.getElementById('pdf-render-iframe');
-  if (!pdfIframe) {
-    // Recreate if cleaned up
-    pdfIframe = document.createElement('iframe');
-    pdfIframe.id = 'pdf-render-iframe';
-    pdfIframe.style.cssText = `position:fixed;left:-9999px;top:0;width:${pdfPageWidth}px;height:2000px;border:none;`;
-    document.body.appendChild(pdfIframe);
-    const wrappedHtml = pdfHtmlData.replace('</head>',
-      `<style>html,body{width:${pdfPageWidth}px!important;max-width:${pdfPageWidth}px!important;overflow:hidden!important;}table{max-width:100%!important;word-break:break-word;}img{max-width:100%!important;}</style></head>`
-    );
-    pdfIframe.contentDocument.open();
-    pdfIframe.contentDocument.write(wrappedHtml);
-    pdfIframe.contentDocument.close();
-    await new Promise(resolve => {
-      pdfIframe.onload = resolve;
-      setTimeout(resolve, 3000);
-    });
-    await new Promise(r => setTimeout(r, 1500));
+function downloadPdf() {
+  if (!pdfBase64Data) return;
+  // Convert base64 to binary blob and trigger download
+  const byteChars = atob(pdfBase64Data);
+  const byteArray = new Uint8Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) {
+    byteArray[i] = byteChars.charCodeAt(i);
   }
-
-  const body = pdfIframe.contentDocument.body;
-
-  const opt = {
-    margin:       [0.3, 0.3, 0.3, 0.3],
-    filename:     'VNO_Investment_OnePager.pdf',
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      width: pdfPageWidth,
-      windowWidth: pdfPageWidth
-    },
-    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
-    pagebreak:    { mode: ['avoid-all'] }
-  };
-
-  try {
-    await html2pdf().set(opt).from(body).save();
-  } catch (e) {
-    console.error('PDF download error:', e);
-    // Fallback: open print dialog on the preview (browser can Save as PDF)
-    const win = window.open('', '_blank');
-    win.document.write(pdfHtmlData);
-    win.document.close();
-    win.onload = () => win.print();
-  }
-
-  if (btn) { btn.disabled = false; btn.textContent = 'Download PDF'; }
+  const blob = new Blob([byteArray], { type: 'application/pdf' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'VNO_Investment_OnePager.pdf';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 function closePdfModal() {
   document.getElementById('pdfModal').classList.remove('active');
-  const iframe = document.getElementById('pdf-render-iframe');
-  if (iframe) iframe.remove();
 }
 
 // ─── DEMO MODE ───
