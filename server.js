@@ -74,7 +74,7 @@ app.post('/api/generate', async (req, res) => {
 });
 
 // Generate PDF from the already-rendered dashboard HTML.
-// Frontend sends the full HTML — agent just pipes it through createPDF. No LLM needed.
+// Frontend sends pre-built VNO-branded HTML → agent just runs createPDF → we download the binary.
 app.post('/api/generate-pdf', async (req, res) => {
   try {
     const { html_content } = req.body;
@@ -83,7 +83,7 @@ app.post('/api/generate-pdf', async (req, res) => {
       return res.status(400).json({ error: 'No HTML content provided' });
     }
 
-    // Step 1: Send HTML to the converter agent (LLM preps for print, then createPDF)
+    // Step 1: Send pre-branded HTML to createPDF agent (no LLM — direct conversion)
     const agentResponse = await fetch(`${PUBLIC_URL}/maistro`, {
       method: 'POST',
       headers: {
@@ -101,10 +101,10 @@ app.post('/api/generate-pdf', async (req, res) => {
       return res.status(500).json({ error: `Agent call failed: ${agentResponse.status}` });
     }
 
-    const agentData = await agentResponse.json();
-    const printHtml = agentData.variables?.pdf_ready_html || agentData.answer || '';
+    // Wait for agent to finish (createPDF writes file to NeuralSeek storage)
+    await agentResponse.json();
 
-    // Step 2: Download the real PDF binary from NeuralSeek file storage
+    // Step 2: Download the PDF binary from NeuralSeek file storage
     const pdfResponse = await fetch(`${CONSOLE_URL}/maistro/octet-stream/VNO_Investment_OnePager.pdf`, {
       method: 'GET',
       headers: { 'apikey': API_KEY }
@@ -117,7 +117,7 @@ app.post('/api/generate-pdf', async (req, res) => {
     const pdfBuffer = await pdfResponse.buffer();
     const pdfBase64 = pdfBuffer.toString('base64');
 
-    res.json({ html: printHtml, pdf: pdfBase64 });
+    res.json({ html: html_content, pdf: pdfBase64 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
