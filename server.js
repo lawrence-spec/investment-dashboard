@@ -94,23 +94,11 @@ app.post('/api/generate-pdf', async (req, res) => {
 
     const agentData = await agentResponse.json();
     const pdfHtml = agentData.variables?.pdf_html || agentData.answer || '';
+    const pdfBase64 = agentData.variables?.pdf_base64 || '';
 
-    // Step 2: Download the PDF file from NeuralSeek file storage
-    const fileResponse = await fetch(`${CONSOLE_URL}/exploreFiles`, {
-      method: 'POST',
-      headers: {
-        'apikey': API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ file: 'VNO_Investment_OnePager.pdf' })
-    });
-
-    if (!fileResponse.ok) {
-      return res.status(500).json({ error: `Failed to download PDF from NeuralSeek: ${fileResponse.status}` });
+    if (!pdfBase64) {
+      return res.status(500).json({ error: 'PDF agent did not return pdf_base64 variable' });
     }
-
-    const pdfBuffer = await fileResponse.buffer();
-    const pdfBase64 = pdfBuffer.toString('base64');
 
     // Return both HTML (for preview) and PDF (for download) as base64
     res.json({ html: pdfHtml, pdf: pdfBase64 });
