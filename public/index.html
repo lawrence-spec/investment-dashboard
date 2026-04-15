@@ -744,27 +744,26 @@ function extractDashboardHtml() {
   // Grab only the Overview tab (tab-1) + header for the one-pager PDF
   const header = doc.querySelector('.app-header');
   const overviewTab = doc.getElementById('tab-1');
-  if (!overviewTab) {
-    // Fallback: send everything if we can't find the overview tab
-    return doc.documentElement.outerHTML;
-  }
+  if (!overviewTab) return doc.documentElement.outerHTML;
 
-  // Collect all <style> and <link> tags from <head> so styles carry over
-  const headContent = Array.from(doc.querySelectorAll('head style, head link[rel="stylesheet"]'))
-    .map(el => el.outerHTML).join('\n');
+  // Clone the overview tab so we can strip heavy elements without affecting the live DOM
+  const clone = overviewTab.cloneNode(true);
 
-  // Build a minimal HTML doc with just header + overview content
+  // Remove injected Google Maps images (huge base64 data URIs)
+  const locationSection = clone.querySelector('#location-section');
+  if (locationSection) locationSection.remove();
+
+  // Remove any iframes, scripts, and download buttons
+  clone.querySelectorAll('iframe, script, .btn-download').forEach(el => el.remove());
+
+  // Build a minimal HTML doc — just the overview data
   return `<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  ${headContent}
-</head>
+<head><meta charset="UTF-8"></head>
 <body>
   ${header ? header.outerHTML : ''}
-  <div style="padding:36px 40px;">
-    ${overviewTab.innerHTML}
+  <div style="padding:24px 32px;">
+    ${clone.innerHTML}
   </div>
 </body>
 </html>`;
