@@ -6,8 +6,6 @@ const fs = require('fs');
 const path = require('path');
 const FormData = require('form-data');
 
-const puppeteer = require('puppeteer');
-
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 
@@ -75,14 +73,13 @@ app.post('/api/generate', async (req, res) => {
 });
 
 // Generate PDF one-pager from dashboard data (no Excel re-read)
-// Agent uses NeuralSeek's createPDF internally, and also returns the HTML.
-// We convert that HTML to a real PDF via Puppeteer for the frontend download.
+// Agent uses NeuralSeek's createPDF internally, then we download the PDF file from NeuralSeek.
 app.post('/api/generate-pdf', async (req, res) => {
   try {
     const { dashboard_data } = req.body;
 
-    // Step 1: Call the NeuralSeek agent (uses createPDF on their end)
-    const response = await fetch(`${PUBLIC_URL}/maistro`, {
+    // Step 1: Call the NeuralSeek agent (generates PDF via createPDF node)
+    const agentResponse = await fetch(`${PUBLIC_URL}/maistro`, {
       method: 'POST',
       headers: {
         'apikey': API_KEY,
@@ -95,29 +92,27 @@ app.post('/api/generate-pdf', async (req, res) => {
       })
     });
 
-    const data = await response.json();
-    const pdfHtml = data.variables?.pdf_html || data.answer || '';
+    const agentData = await agentResponse.json();
+    const pdfHtml = agentData.variables?.pdf_html || agentData.answer || '';
 
-    if (!pdfHtml || pdfHtml.length < 200) {
-      return res.status(500).json({ error: 'PDF agent returned insufficient content' });
+    // Step 2: Download the PDF file from NeuralSeek file storage
+    const fileResponse = await fetch(`${CONSOLE_URL}/exploreFiles`, {
+      method: 'POST',
+      headers: {
+        'apikey': API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ file: 'VNO_Investment_OnePager.pdf' })
+    });
+
+    if (!fileResponse.ok) {
+      return res.status(500).json({ error: `Failed to download PDF from NeuralSeek: ${fileResponse.status}` });
     }
 
-    // Step 2: Convert HTML to real PDF via Puppeteer
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-    });
-    const page = await browser.newPage();
-    await page.setContent(pdfHtml, { waitUntil: 'networkidle0', timeout: 15000 });
-    const pdfBuffer = await page.pdf({
-      format: 'Letter',
-      margin: { top: '0.3in', right: '0.3in', bottom: '0.3in', left: '0.3in' },
-      printBackground: true
-    });
-    await browser.close();
+    const pdfBuffer = await fileResponse.buffer();
+    const pdfBase64 = pdfBuffer.toString('base64');
 
     // Return both HTML (for preview) and PDF (for download) as base64
-    const pdfBase64 = pdfBuffer.toString('base64');
     res.json({ html: pdfHtml, pdf: pdfBase64 });
   } catch (err) {
     res.status(500).json({ error: err.message });
