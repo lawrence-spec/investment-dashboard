@@ -794,7 +794,7 @@ function extractDashboardHtml() {
   const satImg = window._pdfSatelliteImage || '';
   const streetViews = window._pdfStreetViews || [];
 
-  // ── Build stat-card grid HTML ──
+  // ── Build stat-card grid HTML (compact) ──
   function buildStatGrid(items, cols) {
     let html = '<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">';
     for (let i = 0; i < items.length; i += cols) {
@@ -803,12 +803,12 @@ function extractDashboardHtml() {
         const item = items[i + j];
         if (item) {
           const valColor = item.negative ? '#cc0000' : '#232323';
-          html += `<td style="padding:8px 10px;border:1px solid #e0e0e0;background:#fff;vertical-align:top;width:${100/cols}%;">
-            <div style="font-size:8px;text-transform:uppercase;letter-spacing:0.06em;color:#666;margin-bottom:3px;font-weight:600;">${item.label}</div>
-            <div style="font-size:13px;font-weight:700;color:${valColor};">${item.value}</div>
+          html += `<td style="padding:4px 6px;border:1px solid #e0e0e0;background:#fff;vertical-align:top;width:${100/cols}%;">
+            <div style="font-size:7px;text-transform:uppercase;letter-spacing:0.05em;color:#666;margin-bottom:2px;font-weight:600;">${item.label}</div>
+            <div style="font-size:11px;font-weight:700;color:${valColor};line-height:1.2;">${item.value}</div>
           </td>`;
         } else {
-          html += `<td style="padding:8px 10px;border:1px solid #e0e0e0;"></td>`;
+          html += `<td style="padding:4px 6px;border:1px solid #e0e0e0;"></td>`;
         }
       }
       html += '</tr>';
@@ -817,7 +817,7 @@ function extractDashboardHtml() {
     return html;
   }
 
-  // ── Build waterfall table HTML ──
+  // ── Build waterfall table HTML (compact) ──
   function buildWaterfall(items) {
     let html = '<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">';
     items.forEach(item => {
@@ -826,18 +826,18 @@ function extractDashboardHtml() {
       const valColor = item.isTotal ? '#137ea4' : '#232323';
       const border = item.isTotal ? '2px solid #35b7e7' : '1px solid #e0e0e0';
       html += `<tr style="background:${bg};border-top:${border};">
-        <td style="padding:6px 10px;font-weight:${fw};font-size:10px;color:#333;border-bottom:1px solid #e0e0e0;">${item.label}</td>
-        <td style="padding:6px 10px;font-weight:700;font-size:10px;color:${valColor};text-align:right;border-bottom:1px solid #e0e0e0;">${item.value}</td>
-        <td style="padding:6px 10px;font-size:9px;color:#666;text-align:right;width:50px;border-bottom:1px solid #e0e0e0;">${item.percent}</td>
+        <td style="padding:3px 6px;font-weight:${fw};font-size:9px;color:#333;border-bottom:1px solid #e0e0e0;">${item.label}</td>
+        <td style="padding:3px 6px;font-weight:700;font-size:9px;color:${valColor};text-align:right;border-bottom:1px solid #e0e0e0;">${item.value}</td>
+        <td style="padding:3px 6px;font-size:8px;color:#666;text-align:right;width:44px;border-bottom:1px solid #e0e0e0;">${item.percent}</td>
       </tr>`;
     });
     html += '</table>';
     return html;
   }
 
-  // ── Section title HTML ──
+  // ── Section title HTML (compact) ──
   function sectionTitle(text) {
-    return `<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#35b7e7;margin:14px 0 6px;padding-bottom:4px;border-bottom:2px solid #35b7e7;">${text}</div>`;
+    return `<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#35b7e7;margin:8px 0 4px;padding-bottom:2px;border-bottom:2px solid #35b7e7;">${text}</div>`;
   }
 
   // ── Assemble the branded one-pager ──
@@ -846,19 +846,19 @@ function extractDashboardHtml() {
   const transSection = sections.find(s => s.title.toLowerCase().includes('transaction'));
   const returnSection = sections.find(s => s.title.toLowerCase().includes('return'));
 
-  // Hero image strip (satellite) or colored banner
+  // Hero image strip (satellite) or colored banner — compact to save space
   const heroHtml = satImg
-    ? `<div style="position:relative;height:120px;overflow:hidden;">
-        <img src="${satImg}" style="width:100%;height:120px;object-fit:cover;display:block;">
-        <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(35,35,35,0.3) 0%,rgba(35,35,35,0.7) 100%);"></div>
-        <div style="position:absolute;bottom:12px;left:20px;color:#fff;">
-          <div style="font-size:18px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,0.5);">${address}</div>
-          <div style="font-size:10px;opacity:0.9;text-shadow:0 1px 2px rgba(0,0,0,0.5);">${submarket}${buildingType ? ' &bull; ' + buildingType : ''}</div>
+    ? `<div style="position:relative;height:70px;overflow:hidden;">
+        <img src="${satImg}" style="width:100%;height:70px;object-fit:cover;display:block;">
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,rgba(35,35,35,0.8) 0%,rgba(35,35,35,0.3) 60%,transparent 100%);"></div>
+        <div style="position:absolute;top:50%;left:20px;transform:translateY(-50%);color:#fff;">
+          <div style="font-size:15px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.5);">${address}</div>
+          <div style="font-size:9px;opacity:0.9;text-shadow:0 1px 2px rgba(0,0,0,0.5);">${submarket}${buildingType ? ' &bull; ' + buildingType : ''}</div>
         </div>
       </div>`
-    : `<div style="background:#232323;padding:16px 20px;">
-        <div style="font-size:18px;font-weight:700;color:#fff;">${address}</div>
-        <div style="font-size:10px;color:#bbbbbb;">${submarket}${buildingType ? ' &bull; ' + buildingType : ''}</div>
+    : `<div style="background:#232323;padding:10px 20px;">
+        <div style="font-size:15px;font-weight:700;color:#fff;">${address}</div>
+        <div style="font-size:9px;color:#bbbbbb;">${submarket}${buildingType ? ' &bull; ' + buildingType : ''}</div>
       </div>`;
 
   return `<!DOCTYPE html>
@@ -873,22 +873,22 @@ function extractDashboardHtml() {
 </head>
 <body>
 <!-- VNO Header Bar -->
-<div style="background:#232323;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;">
-  <div style="display:flex;align-items:center;gap:12px;">
-    <img src="https://cdn-vno.reol.com/vno/r/nova/i/l/logo.png" style="height:22px;">
+<div style="background:#232323;padding:5px 16px;display:flex;align-items:center;justify-content:space-between;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="https://cdn-vno.reol.com/vno/r/nova/i/l/logo.png" style="height:18px;">
     <div>
-      <div style="color:#fff;font-size:12px;font-weight:700;letter-spacing:0.02em;">Investment One-Pager</div>
-      <div style="color:#bbbbbb;font-size:8px;">${propertySubtitle || 'Real Estate Investment Packet'}</div>
+      <div style="color:#fff;font-size:10px;font-weight:700;letter-spacing:0.02em;">Investment One-Pager</div>
+      <div style="color:#bbbbbb;font-size:7px;">${propertySubtitle || 'Real Estate Investment Packet'}</div>
     </div>
   </div>
-  <div style="color:#35b7e7;font-size:8px;font-weight:600;">VORNADO REALTY TRUST</div>
+  <div style="color:#35b7e7;font-size:7px;font-weight:600;letter-spacing:0.05em;">VORNADO REALTY TRUST</div>
 </div>
 
 <!-- Hero: satellite image or address banner -->
 ${heroHtml}
 
 <!-- Main content area -->
-<div style="padding:10px 20px 12px;">
+<div style="padding:6px 16px 8px;">
 
   <!-- Property Snapshot -->
   ${snap ? sectionTitle('Property Snapshot') + buildStatGrid(snap.items, 4) : ''}
@@ -898,7 +898,7 @@ ${heroHtml}
 
   <!-- Sources & Uses side-by-side -->
   ${(sourcesSection || usesSection) ? `
-  <table cellpadding="0" cellspacing="0" style="width:100%;margin-top:10px;">
+  <table cellpadding="0" cellspacing="0" style="width:100%;margin-top:4px;">
     <tr><td style="vertical-align:top;width:48%;padding-right:8px;">
       ${sourcesSection ? sectionTitle('Sources of Capital') + buildWaterfall(sourcesSection.items) : ''}
     </td>
@@ -917,10 +917,10 @@ ${heroHtml}
   <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
     <tr>
       ${streetViews.map(sv => `
-      <td style="width:25%;padding:0 2px;vertical-align:top;">
-        <div style="position:relative;overflow:hidden;border-radius:4px;border:1px solid #e0e0e0;">
-          <img src="${sv.src}" style="width:100%;height:80px;object-fit:cover;display:block;">
-          <div style="position:absolute;bottom:3px;left:4px;background:rgba(35,35,35,0.85);color:#fff;padding:1px 6px;border-radius:8px;font-size:7px;font-weight:600;">${sv.label}</div>
+      <td style="width:25%;padding:0 1px;vertical-align:top;">
+        <div style="position:relative;overflow:hidden;border-radius:3px;">
+          <img src="${sv.src}" style="width:100%;height:60px;object-fit:cover;display:block;">
+          <div style="position:absolute;bottom:2px;left:3px;background:rgba(35,35,35,0.85);color:#fff;padding:1px 5px;border-radius:6px;font-size:6px;font-weight:600;">${sv.label}</div>
         </div>
       </td>`).join('')}
     </tr>
@@ -929,8 +929,8 @@ ${heroHtml}
 </div>
 
 <!-- Footer -->
-<div style="background:#000;padding:6px 20px;text-align:center;position:fixed;bottom:0;left:0;right:0;">
-  <span style="color:#bbbbbb;font-size:7px;">Confidential &bull; Prepared by Vornado Realty Trust &bull; Powered by NeuralSeek</span>
+<div style="background:#000;padding:4px 16px;text-align:center;">
+  <span style="color:#bbbbbb;font-size:6px;">Confidential &bull; Prepared by Vornado Realty Trust &bull; Powered by NeuralSeek</span>
 </div>
 </body>
 </html>`;
