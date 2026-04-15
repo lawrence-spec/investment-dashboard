@@ -14,12 +14,10 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@sparticuz/chromium": "^147.0.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "form-data": "^4.0.5",
     "multer": "^2.1.1",
-    "node-fetch": "^2.7.0",
-    "puppeteer-core": "^24.40.0"
+    "node-fetch": "^2.7.0"
   }
 }

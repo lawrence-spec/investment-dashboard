@@ -5,8 +5,6 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
 const FormData = require('form-data');
-const puppeteer = require('puppeteer-core');
-const chromium = require('@sparticuz/chromium');
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
@@ -75,12 +73,12 @@ app.post('/api/generate', async (req, res) => {
 });
 
 // Generate PDF one-pager from dashboard data (no Excel re-read)
-// Agent generates branded HTML via LLM, then we convert to PDF with Puppeteer + bundled Chromium.
+// Agent generates branded HTML + PDF via createPDF node, then we download the PDF from NeuralSeek.
 app.post('/api/generate-pdf', async (req, res) => {
   try {
     const { dashboard_data } = req.body;
 
-    // Step 1: Call the NeuralSeek agent to generate branded HTML
+    // Step 1: Call the NeuralSeek agent (generates HTML + creates PDF via createPDF node)
     const agentResponse = await fetch(`${PUBLIC_URL}/maistro`, {
       method: 'POST',
       headers: {
@@ -97,27 +95,19 @@ app.post('/api/generate-pdf', async (req, res) => {
     const agentData = await agentResponse.json();
     const pdfHtml = agentData.variables?.pdf_html || agentData.answer || '';
 
-    if (!pdfHtml || pdfHtml.length < 200) {
-      return res.status(500).json({ error: 'PDF agent returned insufficient HTML content' });
+    // Step 2: Download the real PDF binary from NeuralSeek file storage
+    const pdfResponse = await fetch(`${CONSOLE_URL}/maistro/octet-stream/VNO_Investment_OnePager.pdf`, {
+      method: 'GET',
+      headers: { 'apikey': API_KEY }
+    });
+
+    if (!pdfResponse.ok) {
+      return res.status(500).json({ error: `Failed to download PDF: ${pdfResponse.status}` });
     }
 
-    // Step 2: Convert HTML to PDF using puppeteer-core + bundled Chromium
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless
-    });
-    const page = await browser.newPage();
-    await page.setContent(pdfHtml, { waitUntil: 'networkidle0', timeout: 15000 });
-    const pdfBuffer = await page.pdf({
-      format: 'Letter',
-      margin: { top: '0.3in', right: '0.3in', bottom: '0.3in', left: '0.3in' },
-      printBackground: true
-    });
-    await browser.close();
-
+    const pdfBuffer = await pdfResponse.buffer();
     const pdfBase64 = pdfBuffer.toString('base64');
+
     res.json({ html: pdfHtml, pdf: pdfBase64 });
   } catch (err) {
     res.status(500).json({ error: err.message });
