@@ -790,8 +790,9 @@ function extractDashboardHtml() {
   const submarket = snap ? (snap.items.find(i => i.label === 'Submarket') || {}).value || '' : '';
   const buildingType = snap ? (snap.items.find(i => i.label === 'Building Type') || {}).value || '' : '';
 
-  // ── Get satellite image if available ──
+  // ── Get map images if available ──
   const satImg = window._pdfSatelliteImage || '';
+  const streetViews = window._pdfStreetViews || [];
 
   // ── Build stat-card grid HTML ──
   function buildStatGrid(items, cols) {
@@ -909,6 +910,21 @@ ${heroHtml}
 
   <!-- Going-In Return Math -->
   ${returnSection ? sectionTitle('Going-In Return Math') + buildStatGrid(returnSection.items, 3) : ''}
+
+  <!-- Street View Images -->
+  ${streetViews.length ? `
+  ${sectionTitle('Street Views')}
+  <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+    <tr>
+      ${streetViews.map(sv => `
+      <td style="width:25%;padding:0 2px;vertical-align:top;">
+        <div style="position:relative;overflow:hidden;border-radius:4px;border:1px solid #e0e0e0;">
+          <img src="${sv.src}" style="width:100%;height:80px;object-fit:cover;display:block;">
+          <div style="position:absolute;bottom:3px;left:4px;background:rgba(35,35,35,0.85);color:#fff;padding:1px 6px;border-radius:8px;font-size:7px;font-weight:600;">${sv.label}</div>
+        </div>
+      </td>`).join('')}
+    </tr>
+  </table>` : ''}
 
 </div>
 
@@ -1214,8 +1230,9 @@ async function injectLocationImages(iframe) {
     const mapData = await mapRes.json();
     if (!mapData.available) return;
 
-    // Store satellite image globally for PDF one-pager
+    // Store map images globally for PDF one-pager
     window._pdfSatelliteImage = mapData.satellite || '';
+    window._pdfStreetViews = mapData.streetViews || [];
 
     // Find the Overview tab content (tab-1)
     const overviewTab = doc.getElementById('tab-1');
