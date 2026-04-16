@@ -544,12 +544,34 @@ body { font-family: 'Proxima Nova', 'Inter', system-ui, -apple-system, sans-seri
 <!-- DASHBOARD OUTPUT -->
 <div class="dashboard-container" id="dashboardContainer"></div>
 
-<!-- PDF FLOATING BUTTON -->
-<div class="pdf-fab" id="pdfFab">
+<!-- FLOATING BUTTONS (stacked) -->
+<div class="pdf-fab" id="pdfFab" style="display:none;flex-direction:column;gap:10px;align-items:flex-end;">
+  <button onclick="startResearch()" id="researchBtn" style="background:#137ea4;color:#fff;border:none;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;font-family:'Proxima Nova','Inter',system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 18px rgba(19,126,164,0.35);display:flex;align-items:center;gap:8px;">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/>
+      <path d="m21 21-4.3-4.3"/>
+    </svg>
+    Area Risk Research
+  </button>
   <button onclick="startPdfGeneration()">
     <img src="https://cdn-vno.reol.com/vno/r/nova/i/l/logo.png" alt="VNO">
     Generate VNO One-Pager
   </button>
+</div>
+
+<!-- RESEARCH MODAL -->
+<div class="pdf-modal-overlay" id="researchModal">
+  <div class="pdf-modal" style="max-width:720px;text-align:left;max-height:85vh;overflow-y:auto;">
+    <div id="researchLoading" style="text-align:center;">
+      <div class="pdf-spinner" style="border-top-color:#137ea4;"></div>
+      <h3 style="text-align:center;margin-bottom:4px;">Researching Area</h3>
+      <p style="text-align:center;" id="researchSub">Scanning web for adverse news and alerts near the property...</p>
+    </div>
+    <div id="researchResults" style="display:none;"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+      <button class="btn-pdf-close" onclick="closeResearchModal()">Close</button>
+    </div>
+  </div>
 </div>
 
 <!-- PDF GENERATION MODAL -->
@@ -688,7 +710,7 @@ async function handleFile(file) {
       dashboardContainer.style.display = 'block';
 
       // Show PDF button
-      document.getElementById('pdfFab').style.display = 'block';
+      document.getElementById('pdfFab').style.display = 'flex';
 
       // Write the full dashboard HTML into an iframe for clean isolation
       const iframe = document.createElement('iframe');
@@ -1037,6 +1059,157 @@ function closePdfModal() {
   document.getElementById('pdfModal').classList.remove('active');
 }
 
+// ─── AREA RISK RESEARCH ───
+function getPropertyAddress() {
+  // Pull the address from the Property Snapshot stat cards
+  const iframe = document.querySelector('#dashboardContainer iframe');
+  if (!iframe || !iframe.contentDocument) return '';
+  const doc = iframe.contentDocument;
+  let address = '';
+  let submarket = '';
+  doc.querySelectorAll('.stat-card').forEach(card => {
+    const label = card.querySelector('.label, h3');
+    const value = card.querySelector('.value, p, .stat');
+    if (!label || !value) return;
+    const labelText = label.textContent.trim().toLowerCase();
+    if (labelText === 'address') address = value.textContent.trim();
+    if (labelText === 'submarket') submarket = value.textContent.trim();
+  });
+  if (!address) return '';
+  // Append submarket + NYC if not already present
+  if (!/\b(new york|ny|manhattan|brooklyn|queens|bronx|staten)\b/i.test(address)) {
+    address += (submarket ? ', ' + submarket : '') + ', New York, NY';
+  }
+  return address;
+}
+
+function riskColor(level) {
+  const map = {
+    'Low':     { bg:'#DCFCE7', fg:'#008031', border:'#008031' },
+    'Moderate':{ bg:'#FEF9C3', fg:'#A16207', border:'#D97706' },
+    'Elevated':{ bg:'#FED7AA', fg:'#C2410C', border:'#EA580C' },
+    'High':    { bg:'#FEE2E2', fg:'#B91C1C', border:'#DC2626' }
+  };
+  return map[level] || map['Low'];
+}
+
+function categoryIcon(cat) {
+  const icons = {
+    'Crime': '🚨', 'Environmental': '🌿', 'Legal': '⚖️',
+    'Development': '🏗️', 'Market': '📉', 'Infrastructure': '🔧', 'Other': '📰'
+  };
+  return icons[cat] || icons['Other'];
+}
+
+async function startResearch() {
+  const address = getPropertyAddress();
+  if (!address) {
+    alert('Could not find property address in the dashboard.');
+    return;
+  }
+
+  const modal = document.getElementById('researchModal');
+  const loading = document.getElementById('researchLoading');
+  const results = document.getElementById('researchResults');
+
+  modal.classList.add('active');
+  loading.style.display = 'block';
+  results.style.display = 'none';
+  results.innerHTML = '';
+  document.getElementById('researchSub').textContent = `Scanning web for adverse news near ${address}...`;
+
+  try {
+    const res = await fetch('/api/research-property', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address })
+    });
+
+    if (!res.ok) throw new Error('Request failed: ' + res.status);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const report = data.report;
+    if (!report) {
+      throw new Error('Agent did not return a parseable report.');
+    }
+
+    renderResearchReport(report);
+  } catch (err) {
+    loading.style.display = 'none';
+    results.style.display = 'block';
+    results.innerHTML = `
+      <h3 style="color:#B91C1C;margin-bottom:8px;">Research Failed</h3>
+      <p style="color:#64748B;font-size:13px;">${err.message}</p>
+    `;
+  }
+}
+
+function renderResearchReport(r) {
+  const loading = document.getElementById('researchLoading');
+  const results = document.getElementById('researchResults');
+  loading.style.display = 'none';
+  results.style.display = 'block';
+
+  const risk = riskColor(r.overall_risk || 'Low');
+  const alerts = Array.isArray(r.alerts) ? r.alerts : [];
+  const positives = Array.isArray(r.positive_notes) ? r.positive_notes : [];
+
+  results.innerHTML = `
+    <div style="border-left:4px solid ${risk.border};background:${risk.bg};padding:14px 16px;border-radius:8px;margin-bottom:18px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:11px;color:#64748B;text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">Area Risk Assessment</div>
+        <div style="background:${risk.border};color:#fff;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">${r.overall_risk || 'Low'} Risk</div>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:#232323;margin-bottom:4px;">${r.address || ''}</div>
+      <div style="font-size:13px;color:#333;line-height:1.45;">${r.summary || 'No summary available.'}</div>
+    </div>
+
+    <div style="font-size:11px;color:#232323;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:10px;border-bottom:2px solid #35b7e7;padding-bottom:6px;">
+      Alerts (${alerts.length})
+    </div>
+
+    ${alerts.length === 0 ? `
+      <div style="background:#DCFCE7;color:#166534;padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:18px;">
+        ✓ No significant adverse news detected in the area.
+      </div>
+    ` : alerts.map(a => {
+      const sev = riskColor(a.severity || 'Low');
+      return `
+        <div style="border:1px solid #E2E8F0;border-left:3px solid ${sev.border};border-radius:6px;padding:12px 14px;margin-bottom:10px;background:#fff;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:14px;">${categoryIcon(a.category)}</span>
+              <span style="font-size:10px;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">${a.category || 'Other'}</span>
+            </div>
+            <span style="background:${sev.bg};color:${sev.fg};padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;">${a.severity || 'Low'}</span>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#232323;margin-bottom:4px;line-height:1.3;">${a.headline || ''}</div>
+          <div style="font-size:12px;color:#475569;line-height:1.45;margin-bottom:8px;">${a.description || ''}</div>
+          ${a.source_url ? `<a href="${a.source_url}" target="_blank" rel="noopener" style="font-size:11px;color:#137ea4;text-decoration:none;font-weight:600;">${(a.source_title || 'Source')} →</a>` : ''}
+        </div>
+      `;
+    }).join('')}
+
+    ${positives.length ? `
+      <div style="font-size:11px;color:#232323;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin:18px 0 10px;border-bottom:2px solid #008031;padding-bottom:6px;">
+        Positive Notes
+      </div>
+      <ul style="list-style:none;padding:0;margin:0;">
+        ${positives.map(p => `<li style="padding:8px 12px;background:#F0FDF4;border-left:3px solid #008031;border-radius:4px;font-size:12px;color:#166534;margin-bottom:6px;">✓ ${p}</li>`).join('')}
+      </ul>
+    ` : ''}
+
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid #E2E8F0;font-size:10px;color:#94A3B8;text-align:center;">
+      Powered by NeuralSeek + Exa web search
+    </div>
+  `;
+}
+
+function closeResearchModal() {
+  document.getElementById('researchModal').classList.remove('active');
+}
+
 // ─── DASHBOARD POLISH (cleaner layout, better spacing) ───
 function polishDashboard(iframe) {
   const doc = iframe.contentDocument;
@@ -1315,7 +1488,7 @@ async function loadDemo() {
     dashboardContainer.style.display = 'block';
 
     // Show PDF button
-    document.getElementById('pdfFab').style.display = 'block';
+    document.getElementById('pdfFab').style.display = 'flex';
 
     // Render into iframe
     const iframe = document.createElement('iframe');

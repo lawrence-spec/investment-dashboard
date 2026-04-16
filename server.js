@@ -124,6 +124,54 @@ app.post('/api/generate-pdf', async (req, res) => {
 });
 
 
+// ─── PROPERTY ADVERSE NEWS RESEARCH ───
+// Calls the Property-Adverse-News-Research agent (which uses Exa web search)
+// and returns a structured JSON risk report.
+app.post('/api/research-property', async (req, res) => {
+  try {
+    const { address } = req.body;
+    if (!address || address.length < 5) {
+      return res.status(400).json({ error: 'Address is required' });
+    }
+
+    const agentRes = await fetch(`${PUBLIC_URL}/maistro`, {
+      method: 'POST',
+      headers: {
+        'apikey': API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        agent: 'Property-Adverse-News-Research',
+        params: [{ name: 'address', value: address }],
+        options: { returnVariables: true }
+      })
+    });
+
+    if (!agentRes.ok) {
+      const txt = await agentRes.text();
+      return res.status(500).json({ error: `Agent call failed: ${agentRes.status} — ${txt.slice(0, 200)}` });
+    }
+
+    const data = await agentRes.json();
+    const raw = data.variables?.report || data.answer || '';
+
+    // Agent returns JSON as a string — parse it for the frontend
+    let report = null;
+    try {
+      // Strip any leading/trailing whitespace or markdown fences just in case
+      const cleaned = raw.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+      report = JSON.parse(cleaned);
+    } catch (e) {
+      return res.json({ report: null, raw, parseError: e.message });
+    }
+
+    res.json({ report });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // ─── GOOGLE MAPS ENDPOINTS ───
 
 // In-memory cache to avoid repeat API calls for the same address
